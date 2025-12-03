@@ -2,8 +2,8 @@ import os
 import pandas as pd
 import numpy as np
 import streamlit as st
-from google.cloud import bigquery as bq
-from google.oauth2 import service_account
+#from google.cloud import bigquery as bq
+#from google.oauth2 import service_account
 from img_util.parse_img import TransformImage
 
 # Create API client.
@@ -129,48 +129,69 @@ def filter_category(df, category):
 def filter_recipe(df, recipe):
     return df.query(f"食譜 == '{recipe}'") if recipe != "全部" else df
 
+# -- 251204 Y.Huang
+# @st.cache_data
+# def get_pokemon_info_from_bq(pokemon):
+#     sql = f"""
+#         SELECT
+#             p.* EXCEPT (_airbyte_raw_id,
+#                 _airbyte_extracted_at,
+#                 _airbyte_meta),
+#             i.name AS ingredient,
+#             i.energy AS ingredient_energy,
+#             f.name AS fruit,
+#             f.lv60_energy AS fruit_energy,
+#             m.name AS main_skill,
+#             m.Lv1,
+#             m.Lv2,
+#             m.Lv3,
+#             m.Lv4,
+#             m.Lv5,
+#             m.Lv6,
+#         FROM
+#             `PokemonSleep.Pokemon` AS p
+#         JOIN
+#             `PokemonSleep.Ingredient` AS i
+#         ON
+#             i.name = p.ingredient
+#         JOIN
+#             `PokemonSleep.Fruit` AS f
+#         ON
+#             f.name = p.fruit
+#         JOIN
+#             `PokemonSleep.MainSkill` AS m
+#         ON
+#             m.name = p.main_skill
+#         WHERE p.name = '{pokemon}'
+#     """
+#     credentials = service_account.Credentials.from_service_account_info(
+#         st.secrets["gcp_service_account"]
+#     )
+#     client = bq.Client(credentials=credentials)
+#     query_job = client.query(sql)
+#     result_dict = [dict(result) for result in query_job][0]
+#     return result_dict
+
+# ++ 251204 Y.Huang 
+#get_pokemon_info_from_bq重构为本地数据库版
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))  # 获取上一层目录
+DATA_DIR = os.path.join(BASE_DIR, "data")
+
+df_pokemon = pd.read_csv(os.path.join(DATA_DIR, "Pokemon.csv"))
+df_ingredient = pd.read_csv(os.path.join(DATA_DIR, "Ingredient.csv"))
+df_fruit = pd.read_csv(os.path.join(DATA_DIR, "Fruit.csv"))
+df_skill = pd.read_csv(os.path.join(DATA_DIR, "MainSkill.csv"))
 
 @st.cache_data
-def get_pokemon_info_from_bq(pokemon):
-    sql = f"""
-        SELECT
-            p.* EXCEPT (_airbyte_raw_id,
-                _airbyte_extracted_at,
-                _airbyte_meta),
-            i.name AS ingredient,
-            i.energy AS ingredient_energy,
-            f.name AS fruit,
-            f.lv60_energy AS fruit_energy,
-            m.name AS main_skill,
-            m.Lv1,
-            m.Lv2,
-            m.Lv3,
-            m.Lv4,
-            m.Lv5,
-            m.Lv6,
-        FROM
-            `PokemonSleep.Pokemon` AS p
-        JOIN
-            `PokemonSleep.Ingredient` AS i
-        ON
-            i.name = p.ingredient
-        JOIN
-            `PokemonSleep.Fruit` AS f
-        ON
-            f.name = p.fruit
-        JOIN
-            `PokemonSleep.MainSkill` AS m
-        ON
-            m.name = p.main_skill
-        WHERE p.name = '{pokemon}'
-    """
-    credentials = service_account.Credentials.from_service_account_info(
-        st.secrets["gcp_service_account"]
+def get_pokemon_info_local(pokemon):
+    df = (
+        df_pokemon.merge(df_ingredient, left_on="ingredient", right_on="name", suffixes=("", "_ingredient"))
+            .merge(df_fruit, left_on="fruit", right_on="name", suffixes=("", "_fruit"))
+            .merge(df_skill, left_on="main_skill", right_on="name", suffixes=("", "_skill"))
     )
-    client = bq.Client(credentials=credentials)
-    query_job = client.query(sql)
-    result_dict = [dict(result) for result in query_job][0]
-    return result_dict
+
+    result = df[df["name"] == pokemon].iloc[0].to_dict()
+    return result
 
 
 @st.cache_data

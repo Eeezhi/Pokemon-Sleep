@@ -21,7 +21,8 @@ def get_db_item_list(db_conn, target_collection):
     item_list.insert(0, '---')
     return item_list
 
-db_conn = connect_mongodb()
+#db_conn = connect_mongodb()
+db_conn = None #+251205 Y.Huang
 pokemons_list = get_db_item_list(db_conn, 'airbyte_raw_Pokemon')
 main_skills_list = get_db_item_list(db_conn, 'airbyte_raw_MainSkill')
 sub_skills_list = get_db_item_list(db_conn, 'airbyte_raw_SubSkill')

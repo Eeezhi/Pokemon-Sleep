@@ -57,14 +57,18 @@ class TransformImage:
         self.lang = "chinese_cht"
     
     def extract_text_from_img(self):
-        # 設定辨識語言、不顯示 log
-        ocr = PaddleOCR(lang=self.lang, show_log=False)  
+        #新版本去掉了show_log参数，默认不显示日志
+        ocr = PaddleOCR(lang=self.lang)  
+        #从ocr.ocr()改为ocr.predict()以符合新版本
+        #新版本去掉了cls参数，默认开启文字方向检测
+        result = ocr.predict(self.img)  
         
-        # If no text is rotated by 180 degrees, use cls=False to get better performance.
-        # 關閉 angle classifier 的辨識，提高效能
-        result = ocr.ocr(self.img, cls=False)  
-        
-        return result[0]
+        if not result or not result[0]:
+            return []
+
+        # 提取所有文字内容
+        texts = [line[1][0] for line in result[0]]
+        return texts
             
     
     def filter_text(self, result):

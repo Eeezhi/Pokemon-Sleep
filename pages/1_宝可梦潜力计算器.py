@@ -29,12 +29,10 @@ if uploaded_file is not None:
     st.header("圖片辨識結果")
 
     with st.form("my_form"):
-
         if info["pokemon"]:
             from pages.util.util import (
                 #get_pokemon_info_from_bq,
                 get_pokemon_info_local,
-                
                 get_rank_color_text,
                 get_item_list_from_bq,
                 get_nature_dict_from_bq,

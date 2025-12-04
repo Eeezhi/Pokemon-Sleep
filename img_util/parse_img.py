@@ -1,33 +1,55 @@
 import re
 from datetime import datetime
 import streamlit as st
-from pymongo.mongo_client import MongoClient
+#from pymongo.mongo_client import MongoClient
 import warnings; warnings.filterwarnings('ignore')
 from paddleocr import PaddleOCR
+import os
+import pandas as pd
+
+raw_DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "dbdata")
 
 # Connect MongoDB to get possible item lists
-def connect_mongodb():
-    username = st.secrets["db_username"]
-    password = st.secrets["db_password"]
-    uri = f"mongodb+srv://{username}:{password}@cluster0.dhzzdc6.mongodb.net/?retryWrites=true&w=majority"
-    client = MongoClient(uri)
-    db_conn = client['PokemonSleep']
-    return db_conn
+# def connect_mongodb():
+#     username = st.secrets["db_username"]
+#     password = st.secrets["db_password"]
+#     uri = f"mongodb+srv://{username}:{password}@cluster0.dhzzdc6.mongodb.net/?retryWrites=true&w=majority"
+#     client = MongoClient(uri)
+#     db_conn = client['PokemonSleep']
+#     return db_conn
 
-def get_db_item_list(db_conn, target_collection):
-    collection = db_conn[target_collection]
-    item_all = collection.find({})
-    item_list = list(set([i['_airbyte_data']['_id'] for i in item_all]))
-    item_list.insert(0, '---')
-    return item_list
+# def get_db_item_list(db_conn, target_collection):
+#     collection = db_conn[target_collection]
+#     item_all = collection.find({})
+#     item_list = list(set([i['_airbyte_data']['_id'] for i in item_all]))
+#     item_list.insert(0, '---')
+#     return item_list
+
+def get_db_item_list(collection_name: str):
+    """
+    模拟从 MongoDB 获取集合数据，改为从 /data/dbdata 下的 CSV 文件读取。
+    """
+    file_path = os.path.join(raw_DATA_DIR, f"{collection_name}.csv")
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"找不到文件: {file_path}")
+
+    df = pd.read_csv(file_path)
+
+    # 默认返回 name 列作为列表
+    if "name" in df.columns:
+        return df["name"].dropna().unique().tolist()
+    else:
+        # 如果没有 name 列，就返回所有列名
+        return df.columns.tolist()
+
 
 #db_conn = connect_mongodb()
 db_conn = None #+251205 Y.Huang
-pokemons_list = get_db_item_list(db_conn, 'airbyte_raw_Pokemon')
-main_skills_list = get_db_item_list(db_conn, 'airbyte_raw_MainSkill')
-sub_skills_list = get_db_item_list(db_conn, 'airbyte_raw_SubSkill')
-natures_list = get_db_item_list(db_conn, 'airbyte_raw_Nature')
-ingredient_list = get_db_item_list(db_conn, 'airbyte_raw_Ingredient')
+pokemons_list = get_db_item_list('airbyte_raw_Pokemon')
+# = get_db_item_list('airbyte_raw_MainSkill') #debug
+#sub_skills_list = get_db_item_list('airbyte_raw_SubSkill') #debug
+#natures_list = get_db_item_list('airbyte_raw_Nature') #debug
+ingredient_list = get_db_item_list('airbyte_raw_Ingredient')
 
 class TransformImage:
     def __init__(self, img):

@@ -174,7 +174,8 @@ def filter_recipe(df, recipe):
 
 # ++ 251204 Y.Huang 
 #get_pokemon_info_from_bq重构为本地数据库版
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))  # 获取上一层目录
+UPPER_DIR = os.path.dirname(os.path.dirname(__file__)) 
+BASE_DIR = os.path.dirname(UPPER_DIR)
 DATA_DIR = os.path.join(BASE_DIR, "data")
 
 df_pokemon = pd.read_csv(os.path.join(DATA_DIR, "Pokemon.csv"))

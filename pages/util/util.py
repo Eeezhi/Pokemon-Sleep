@@ -6,7 +6,7 @@ import streamlit as st
 #from google.oauth2 import service_account
 from img_util.parse_img import TransformImage
 
-# Create API client.
+# 创建 API 客户端（占位）：如果切换回 BigQuery，可解除顶部注释并使用 service_account/bq
 
 category_list = ["全部", "點心/飲料", "沙拉", "咖哩/濃湯"]
 curry_soup_list = [
@@ -97,8 +97,8 @@ def get_ingredient_unique_list(df):
     return ingredient_unique_list
 
 
-# Uses st.cache_data to only rerun when the query changes or after 10 min.
-@st.cache_data(ttl=600)  # Time to Live = 600 seconds
+# 使用 st.cache_data 缓存：只有查询变化或超过 TTL 才会重新执行
+@st.cache_data(ttl=600)  # 生存时间 (TTL) = 600 秒
 def load_gsheet_data(sheets_url):
     csv_url = sheets_url.replace("/edit#gid=", "/export?format=csv&gid=")
     return pd.read_csv(csv_url, on_bad_lines="skip")
@@ -240,40 +240,52 @@ def get_item_list_from_bq(table_name: str):
 
 @st.cache_data
 def get_nature_dict_from_bq(nature_name):
-    sql = f"""
-        SELECT
-            name,
-            up,
-            down,
-        FROM
-            `PokemonSleep.Nature`
-        WHERE name = '{nature_name}'
     """
-    credentials = service_account.Credentials.from_service_account_info(
-        st.secrets["gcp_service_account"]
-    )
-    client = bq.Client(credentials=credentials)
-    query_job = client.query(sql)
-    result_dict = [dict(result) for result in query_job][0]
-    return result_dict
+    本地 CSV 版本：依照性格名稱取得性格資訊（up、down）。
+    期望 `data/Nature.csv` 包含欄位：`name`、`up`、`down`。
+    回傳包含 `name`、`up`、`down` 的字典；若未命中則回傳 `up`/`down` 為 None 的預設字典。
+    """
+    csv_path = os.path.join(DATA_DIR, "Nature.csv")
+    if not os.path.exists(csv_path):
+        st.error(f"缺失文件: {csv_path}. 請將 Nature.csv 放入 data/ 目錄。")
+        raise FileNotFoundError(f"Nature.csv not found in {DATA_DIR}")
+
+    df = pd.read_csv(csv_path)
+    if "name" not in df.columns:
+        st.error(f"Nature.csv 必須包含 'name' 欄位")
+        raise ValueError("Nature.csv missing 'name' column")
+
+    matched = df[df["name"] == nature_name]
+    # 回傳統一格式的字典，便於呼叫端處理：保證有 'name','up','down' 三個鍵
+    result = {"name": nature_name, "up": None, "down": None}
+    if matched.empty:
+        # 回傳統一格式的字典，便於呼叫端處理
+        return {"name": nature_name, "up": None, "down": None}
+
+    row_dict = matched.iloc[0].to_dict()
+    # 將可能缺少的鍵補上（若 CSV 中沒有 'up' 或 'down'，維持 None）
+    result.update({k: row_dict.get(k, None) for k in ("up", "down")})
+    # 若 CSV 有 name 欄位的正式名稱，使用它
+    result["name"] = row_dict.get("name", nature_name)
+    return result
 
 @st.cache_data
 def get_ingredient_dict_from_bq(ingredient):
-    sql = f"""
-        SELECT
-            name,
-            energy,
-        FROM
-            `PokemonSleep.Ingredient`
-        WHERE name = '{ingredient}'
     """
-    credentials = service_account.Credentials.from_service_account_info(
-        st.secrets["gcp_service_account"]
-    )
-    client = bq.Client(credentials=credentials)
-    query_job = client.query(sql)
-    result_dict = [dict(result) for result in query_job][0]
-    return result_dict
+    本地 CSV 版本：透過食材名稱從 `data/Ingredient.csv` 取得食材資料（至少包含 `name`、`energy`）。
+    若找不到對應列，回傳預設的能量 0 以維持呼叫端行為一致。
+    """
+    # 使用预加载的 df_ingredient（文件在模块加载时读取）
+    if "name" not in df_ingredient.columns:
+        st.error("Ingredient.csv 缺少 'name' 欄位，請檢查 data/ 目錄中的檔案。")
+        raise ValueError("Ingredient.csv missing 'name' column")
+
+    matched = df_ingredient[df_ingredient["name"] == ingredient]
+    if matched.empty:
+        st.warning(f"Ingredient '{ingredient}' not found in Ingredient.csv")
+        return {"name": ingredient, "energy": 0}
+
+    return matched.iloc[0].to_dict()
 
 def get_rank_color_text(rank):
     rank_color_dict = {

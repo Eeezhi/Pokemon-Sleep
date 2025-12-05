@@ -186,15 +186,16 @@ df_skill = pd.read_csv(os.path.join(DATA_DIR, "MainSkill.csv"))
 @st.cache_data
 def get_pokemon_info_local(pokemon):
     df_pokemon = pd.read_csv(os.path.join(DATA_DIR, "Pokemon.csv"))
-    df_pokemon_renamed = df_pokemon.rename(columns={"name": "pokemon_name"})
+    # Pokemon.csv 的列名是 "name"，不需要重命名
     df = (
-        df_pokemon_renamed
+        df_pokemon
         .merge(df_ingredient, left_on="ingredient", right_on="name", suffixes=("", "_ingredient"))
         .merge(df_fruit, left_on="fruit", right_on="name", suffixes=("", "_fruit"))
         .merge(df_skill, left_on="main_skill", right_on="name", suffixes=("", "_skill"))
     )
 
-    subset = df[df["pokemon_name"] == pokemon]
+    # 使用 "name" 列进行查询
+    subset = df[df["name"] == pokemon]
     if subset.empty:
         return None
 

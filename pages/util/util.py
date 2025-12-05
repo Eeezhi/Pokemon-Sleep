@@ -178,39 +178,64 @@ UPPER_DIR = os.path.dirname(os.path.dirname(__file__))
 BASE_DIR = os.path.dirname(UPPER_DIR)
 DATA_DIR = os.path.join(BASE_DIR, "data")
 
-df_pokemon = pd.read_csv(os.path.join(DATA_DIR, "Pokemon.csv"))
+
 df_ingredient = pd.read_csv(os.path.join(DATA_DIR, "Ingredient.csv"))
 df_fruit = pd.read_csv(os.path.join(DATA_DIR, "Fruit.csv"))
 df_skill = pd.read_csv(os.path.join(DATA_DIR, "MainSkill.csv"))
 
 @st.cache_data
 def get_pokemon_info_local(pokemon):
+    df_pokemon = pd.read_csv(os.path.join(DATA_DIR, "Pokemon.csv"))
+    df_pokemon_renamed = df_pokemon.rename(columns={"name": "pokemon_name"})
     df = (
-        df_pokemon.merge(df_ingredient, left_on="ingredient", right_on="name", suffixes=("", "_ingredient"))
-            .merge(df_fruit, left_on="fruit", right_on="name", suffixes=("", "_fruit"))
-            .merge(df_skill, left_on="main_skill", right_on="name", suffixes=("", "_skill"))
+        df_pokemon_renamed
+        .merge(df_ingredient, left_on="ingredient", right_on="name", suffixes=("", "_ingredient"))
+        .merge(df_fruit, left_on="fruit", right_on="name", suffixes=("", "_fruit"))
+        .merge(df_skill, left_on="main_skill", right_on="name", suffixes=("", "_skill"))
     )
 
-    result = df[df["name"] == pokemon].iloc[0].to_dict()
-    return result
+    subset = df[df["pokemon_name"] == pokemon]
+    if subset.empty:
+        return None
 
+    return subset.iloc[0].to_dict()
 
+# @st.cache_data
+# def get_item_list_from_bq(table_name):
+#     sql = f"""
+#         SELECT
+#             DISTINCT(name)
+#         FROM
+#             `PokemonSleep.{table_name}`
+#     """
+#     credentials = service_account.Credentials.from_service_account_info(
+#         st.secrets["gcp_service_account"]
+#     )
+#     client = bq.Client(credentials=credentials)
+#     query_job = client.query(sql)
+#     result_list = [result.values()[0] for result in query_job]
+#     return result_list
+#-- 251205 Y.Huang
+
+#++ 251205 Y.Huang get_item_list_from_bq重构为本地数据库版
 @st.cache_data
-def get_item_list_from_bq(table_name):
-    sql = f"""
-        SELECT
-            DISTINCT(name)
-        FROM
-            `PokemonSleep.{table_name}`
+def get_item_list_from_bq(table_name: str):
     """
-    credentials = service_account.Credentials.from_service_account_info(
-        st.secrets["gcp_service_account"]
-    )
-    client = bq.Client(credentials=credentials)
-    query_job = client.query(sql)
-    result_list = [result.values()[0] for result in query_job]
-    return result_list
+    从本地 CSV 文件读取指定表的 name 列，并返回去重后的列表。
+    """
+    file_path = os.path.join(DATA_DIR, f"{table_name}.csv")
 
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"找不到文件: {file_path}")
+
+    df = pd.read_csv(file_path)
+
+    if "name" not in df.columns:
+        raise ValueError(f"{table_name}.csv 缺少 'name' 列")
+
+    # 去重并返回列表
+    result_list = df["name"].dropna().unique().tolist()
+    return result_list
 
 @st.cache_data
 def get_nature_dict_from_bq(nature_name):

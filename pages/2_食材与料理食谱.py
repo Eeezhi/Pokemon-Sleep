@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import os
+from filepath import database_path
 
 from pages.util.util import (
     get_ingredient_unique_list,
@@ -16,7 +18,7 @@ st.set_page_config(page_title='Pokemon Sleep App', layout="wide")
 st.title('Pokemon Sleep 食譜')
 st.caption('利用自己現有的食材篩選能做出哪些食譜料理')
 
-RECIPE_TRANSFORMED = 'data/transformed/recipe_transformed.csv'
+RECIPE_TRANSFORMED = os.path.join(database_path, 'transformed/recipe_transformed.csv')
 df = pd.read_csv(RECIPE_TRANSFORMED, index_col=0)
 ingredient_unique_list = get_ingredient_unique_list(df)
 

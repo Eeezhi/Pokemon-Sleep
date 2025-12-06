@@ -53,56 +53,39 @@ sub_skills_list = get_db_item_list('airbyte_raw_SubSkill')
 natures_list = get_db_item_list('airbyte_raw_Nature')
 ingredient_list = get_db_item_list('airbyte_raw_Ingredient')
 
+@st.cache_resource
+def load_ocr(lang="chinese_cht"):
+    return PaddleOCR(lang=lang)
+
 class TransformImage:
     def __init__(self, img):
         self.img = img
         self.lang = "chinese_cht"
-    
+        self.ocr = load_ocr()   # 缓存的 OCR 实例
+
     def extract_text_from_img(self):
-        """从图片中提取文字，返回文字列表"""
-        # 将字节流转换为 numpy 数组
         try:
             nparr = np.frombuffer(self.img, np.uint8)
             img_array = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            
             if img_array is None:
                 return []
-        except Exception as e:
+        except Exception:
             return []
-        
+
         try:
-            ocr = PaddleOCR(lang=self.lang)  
-        except Exception as e:
-            return []
-        
-        try:
-            # 使用 ocr() 方法
-            result = ocr.ocr(img_array)  
-            
-            # PaddleOCR 返回的是 [PPStructure 对象] 或直接的文字列表
-            # 需要从中提取 rec_texts
+            result = self.ocr.ocr(img_array)
             all_texts = []
-            
             if result and len(result) > 0:
                 ocr_result = result[0]
-                
-                # 如果有 rec_texts 属性（PPStructure 返回），提取它
                 if hasattr(ocr_result, 'rec_texts'):
                     all_texts = list(ocr_result.rec_texts)
-                # 如果是字典，也许有 rec_texts
                 elif isinstance(ocr_result, dict) and 'rec_texts' in ocr_result:
                     all_texts = ocr_result['rec_texts']
-                # 如果是 PaddleOCR 原始格式（嵌套列表）
                 elif isinstance(ocr_result, list):
                     all_texts = [line[1][0] for line in ocr_result if isinstance(line, (list, tuple)) and len(line) > 1]
-                
-                return all_texts
-            else:
-                return []
-                
-        except Exception as e:
-            return []
-            
+            return all_texts
+        except Exception:
+            return []         
     
     def filter_text(self, result):
         """

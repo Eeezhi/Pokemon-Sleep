@@ -1,6 +1,10 @@
 import os
 
-POKEMON_SLEEP_IMG = os.path.join(os.path.dirname(__file__), "img", "pokemon_sleep.png")
+assertsBASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+POKEMON_SLEEP_IMG = os.path.join(assertsBASE_DIR, "img", "pokemon_sleep.png")
+CALCULATOR_IMG = os.path.join(assertsBASE_DIR, "img", "calculator.jpeg")
+RECIPE_IMG = os.path.join(assertsBASE_DIR, "img", "recipe.png")
+POKEMON_IMG = os.path.join(assertsBASE_DIR, "img", "pokemon.png")
 #部署在服务器上时避免路径错误
 #POKEMON_SLEEP_IMG = 'img/pokemon_sleep.png'
 

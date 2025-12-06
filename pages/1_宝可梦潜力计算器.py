@@ -1,6 +1,7 @@
 import os
 import streamlit as st
 from PIL import Image
+from filepath import img_path, database_path
 #from google.cloud import bigquery as bq
 #from google.oauth2 import service_account
 
@@ -144,4 +145,5 @@ if uploaded_file is not None:
 else:
     st.header("截圖範例")
     st.write("左上角寶可夢方框剛好「遮住第一個食材」，並且最底部剛好出現「性格」")
-    st.image("img/test1.PNG" ,width=400) #缩小显示
+    example_img = os.path.join(img_path, "test1.PNG")
+    st.image(example_img ,width=400) #缩小显示

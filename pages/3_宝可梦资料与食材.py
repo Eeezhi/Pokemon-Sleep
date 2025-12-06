@@ -1,6 +1,8 @@
+import os
 import streamlit as st
 import pandas as pd
 import numpy as np
+from filepath import database_path
 
 st.set_page_config(page_title='Pokemon Sleep App', layout="wide")
 st.title('Pokemon Sleep 寶可夢')
@@ -8,7 +10,7 @@ st.caption('寶可夢 ＆ 食材、樹果')
 
 #這裡的pokemon_transformed.csv是來源於下方url的Google試算表，經過轉換後的版本
 #https://docs.google.com/spreadsheets/d/18aAHjg762T29F74yo8axDVFO09swCa7nUp_eTZ51ZAc/edit?gid=1273913201#gid=1273913201
-POKEMON_TRANSFORMED = 'data/transformed/pokemon_transformed.csv'
+POKEMON_TRANSFORMED = os.path.join(database_path, 'transformed/pokemon_transformed.csv')
 df = pd.read_csv(POKEMON_TRANSFORMED)
 
 # 兼容 transformed CSV 的欄位：把英文欄位映射為頁面使用的中文欄位

@@ -5,6 +5,13 @@ from PIL import Image
 from filepath import img_path
 from streamlit.components.v1 import html
 
+#为了兼容python 3.8
+import sys
+try:
+    import zoneinfo
+except ImportError:
+    import backports.zoneinfo as zoneinfo
+    sys.modules["zoneinfo"] = zoneinfo
 
 class Pages:
     base_url = "http://localhost:8501/" #本地调试

@@ -1,4 +1,8 @@
-POKEMON_SLEEP_IMG = 'img/pokemon_sleep.png'
+import os
+
+POKEMON_SLEEP_IMG = os.path.join(os.path.dirname(__file__), "img", "pokemon_sleep.png")
+#部署在服务器上时避免路径错误
+#POKEMON_SLEEP_IMG = 'img/pokemon_sleep.png'
 
 INGREDIENTS_IMG_LINKS = {
  '粗枝大蔥': 'https://cdn.kikinote.net/gallery/game/c01528895fc6b17e02f8b54324a51bb1.png',

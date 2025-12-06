@@ -20,19 +20,8 @@ if uploaded_file is not None:
         img = uploaded_file.getvalue()
         status.update(label="辨識圖片中...", state="running")
         
-        # 直接调用 TransformImage 来看原始 OCR 结果
-        transform_img = TransformImage(img)
-        ocr_raw_result = transform_img.extract_text_from_img()
-        
         info = process_img(img)
         status.update(label="圖片辨識完成！", state="complete")
-        
-    # 调试：输出原始 OCR 结果
-    with st.expander("🔍 **調試信息** - 原始 OCR 結果（點擊展開）"):
-        st.write("**OCR 原始結果結構：**")
-        st.json(ocr_raw_result)
-        st.write("**解析後的 info：**")
-        st.json(info)
 
     # 顯示圖片（缩小显示）
     # st.header('上傳的圖片')
@@ -151,8 +140,6 @@ if uploaded_file is not None:
                         st.header(get_rank_color_text(rank))
     else:
         st.warning("⚠️ 无法识别宝可梦名稱，请上传更清晰的截圖")
-        st.info("OCR 识别结果:")
-        st.write(info)  # 显示完整的 OCR 结果
 
 else:
     st.header("截圖範例")

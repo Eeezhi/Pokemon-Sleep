@@ -184,7 +184,7 @@ df_fruit = pd.read_csv(os.path.join(DATA_DIR, "Fruit.csv"))
 df_skill = pd.read_csv(os.path.join(DATA_DIR, "MainSkill.csv"))
 
 @st.cache_data
-def get_pokemon_info_local(pokemon):
+def get_pokemon_info_local(pokemon: str) -> dict | None:
     df_pokemon = pd.read_csv(os.path.join(DATA_DIR, "Pokemon.csv"))
     # Pokemon.csv 的列名是 "name"，不需要重命名
     df = (
@@ -259,7 +259,7 @@ def get_pokemon_info_local(pokemon):
 
 #++ 251205 Y.Huang get_item_list_from_bq重构为本地数据库版
 @st.cache_data
-def get_item_list_from_bq(table_name: str):
+def get_item_list_from_bq(table_name: str) -> list[str]:
     """
     从本地 CSV 文件读取指定表的 name 列，并返回去重后的列表。
     """
@@ -274,11 +274,11 @@ def get_item_list_from_bq(table_name: str):
         raise ValueError(f"{table_name}.csv 缺少 'name' 列")
 
     # 去重并返回列表
-    result_list = df["name"].dropna().unique().tolist()
+    result_list: list[str] = list(df["name"].dropna().unique())
     return result_list
 
 @st.cache_data
-def get_nature_dict_from_bq(nature_name):
+def get_nature_dict_from_bq(nature_name: str) -> dict:
     """
     本地 CSV 版本：依照性格名稱取得性格資訊（up、down）。
     期望 `data/Nature.csv` 包含欄位：`name`、`up`、`down`。
@@ -309,7 +309,7 @@ def get_nature_dict_from_bq(nature_name):
     return result
 
 @st.cache_data
-def get_ingredient_dict_from_bq(ingredient):
+def get_ingredient_dict_from_bq(ingredient: str) -> dict:
     """
     本地 CSV 版本：透過食材名稱從 `data/Ingredient.csv` 取得食材資料（至少包含 `name`、`energy`）。
     若找不到對應列，回傳預設的能量 0 以維持呼叫端行為一致。
@@ -326,7 +326,7 @@ def get_ingredient_dict_from_bq(ingredient):
 
     return matched.iloc[0].to_dict()
 
-def get_rank_color_text(rank):
+def get_rank_color_text(rank: str) -> str | None:
     rank_color_dict = {
         "SSS": f"評價: :rainbow[{rank}]",
         "SS": f"評價: :rainbow[{rank}]",
@@ -346,7 +346,7 @@ def get_rank_color_text(rank):
 
 
 @st.cache_data(max_entries=3)
-def process_img(img):
+def process_img(img: bytes) -> dict:
     transform_img = TransformImage(img)
     info = transform_img.run()
     return info

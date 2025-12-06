@@ -6,8 +6,22 @@ st.set_page_config(page_title='Pokemon Sleep App', layout="wide")
 st.title('Pokemon Sleep 寶可夢')
 st.caption('寶可夢 ＆ 食材、樹果')
 
+#這裡的pokemon_transformed.csv是來源於下方url的Google試算表，經過轉換後的版本
+#https://docs.google.com/spreadsheets/d/18aAHjg762T29F74yo8axDVFO09swCa7nUp_eTZ51ZAc/edit?gid=1273913201#gid=1273913201
 POKEMON_TRANSFORMED = 'data/transformed/pokemon_transformed.csv'
 df = pd.read_csv(POKEMON_TRANSFORMED)
+
+# 兼容 transformed CSV 的欄位：把英文欄位映射為頁面使用的中文欄位
+rename_map = {}
+if 'name' in df.columns and '名稱' not in df.columns:
+    rename_map['name'] = '名稱'
+if 'fruit' in df.columns and '樹果' not in df.columns:
+    rename_map['fruit'] = '樹果'
+if 'all_ingredients' in df.columns and 'all_ingredients' not in df.columns:
+    # 保持原名，用於查詢
+    pass
+if rename_map:
+    df = df.rename(columns=rename_map)
 
 ingredient_unique_list = list(set([*df['基本食材'], *df['Lv30食材'], *df['Lv60食材']]))
 ingredient_unique_list = ['全部'] + [i for i in ingredient_unique_list if i is not np.nan]

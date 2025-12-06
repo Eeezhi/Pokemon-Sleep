@@ -199,7 +199,46 @@ def get_pokemon_info_local(pokemon):
     if subset.empty:
         return None
 
-    return subset.iloc[0].to_dict()
+    row = subset.iloc[0].to_dict()
+
+    # 将本地 CSV/合并的列名映射为 calculator 期望的鍵名
+    def pick(*keys):
+        for k in keys:
+            if k in row and pd.notna(row[k]):
+                return row[k]
+        return None
+
+    mapped = {}
+    mapped['name'] = pick('name')
+    mapped['final_help_interval'] = pick('final_help_interval', '最終幫忙間隔(秒)')
+    mapped['final_evolution_step'] = pick('final_evolution_step', '最終進化階段')
+    mapped['carry_limit'] = pick('carry_limit', '格子')
+    mapped['type'] = pick('type', '類型')
+    mapped['fruit'] = pick('fruit')
+
+    # fruit energy 可能在合并后的 fruit 表中以繁体中文列名存在
+    mapped['fruit_energy'] = pick('fruit_energy', 'Lv60能量', 'lv60_energy')
+
+    # ingredient 信息
+    mapped['ingredient'] = pick('ingredient')
+    mapped['ingredient_energy'] = pick('energy', 'energy_ingredient', 'ingredient_energy')
+    mapped['ingredient_num'] = pick('食材1數量', 'ingredient_num', 'ingredient_1_num')
+
+    # main skill
+    mapped['main_skill'] = pick('main_skill')
+
+    # 将可能存在的 Lv1..Lv6 等级列拷贝到映射中（供 calculator 读取）
+    for i in range(1, 7):
+        for candidate in (f'Lv{i}', f'Lv{i}_skill', f'Lv{i}_fruit', f'Lv{i}_ingredient'):
+            if candidate in row:
+                mapped[f'Lv{i}'] = row[candidate]
+                break
+
+    # 如果某些关键值还是 None，保留原始行中的其他字段以便排查
+    # 合并原始 row（但 mapped 优先）
+    combined = dict(row)
+    combined.update(mapped)
+    return combined
 
 # @st.cache_data
 # def get_item_list_from_bq(table_name):

@@ -1,5 +1,5 @@
 import numpy as np
-from pymongo.mongo_client import MongoClient
+#from pymongo.mongo_client import MongoClient
 
 # 2024.02.01 更新為「寶可夢Sleep潛力計算機v4.7」版本
 

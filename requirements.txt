@@ -4,9 +4,11 @@ numba==0.57.1
 shap==0.42.1
 Pillow==9.5.0
 pytesseract==0.3.10
-paddlepaddle -i https://mirror.baidu.com/pypi/simple
+opencv-python==4.8.0.74
 paddleocr>=2.0.1
-pymongo
-pymongo[srv]
-streamlit
-google-cloud-bigquery
+# paddlepaddle: choose the correct wheel for your platform (CPU/GPU).
+# See https://www.paddlepaddle.org.cn/install/zh.html and install paddlepaddle
+# before installing the rest if your environment requires a specific build.
+# Example (CPU, Windows) -- run manually per official guide:
+#   pip install paddlepaddle -i https://mirror.baidu.com/pypi/simple
+streamlit>=1.26.0

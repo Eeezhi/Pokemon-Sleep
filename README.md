@@ -1,9 +1,8 @@
 # Pokemon-Sleep Helper
 
 ![pokemon_sleep](img/pokemon_sleep.png)
-
-## Try it
-https://pokemon-sleep.streamlit.app/
+##TODO：
+将原本项目里需要Google Sheet的部分改为本地.csv+pandas的形式
 
 ## Latest Updates
 - 2024/02/01 更新

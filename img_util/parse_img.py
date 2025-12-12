@@ -2,7 +2,7 @@ import re
 import streamlit as st
 #from pymongo.mongo_client import MongoClient
 import warnings; warnings.filterwarnings('ignore')
-from paddleocr import PaddleOCR
+import easyocr
 import os
 import pandas as pd
 import cv2
@@ -54,16 +54,17 @@ natures_list = get_db_item_list('airbyte_raw_Nature')
 ingredient_list = get_db_item_list('airbyte_raw_Ingredient')
 
 @st.cache_resource
-def load_ocr(lang="chinese_cht"):
-    return PaddleOCR(lang=lang)
+def load_ocr():
+    """加载 EasyOCR Reader，使用繁体中文模型"""
+    return easyocr.Reader(['ch_tra'], gpu=False)
 
 class TransformImage:
     def __init__(self, img):
         self.img = img
-        self.lang = "chinese_cht"
-        self.ocr = load_ocr()   # 缓存的 OCR 实例
+        self.ocr = load_ocr()   # 缓存的 EasyOCR Reader 实例
 
     def extract_text_from_img(self):
+        """使用 EasyOCR 从图片中提取文字"""
         try:
             nparr = np.frombuffer(self.img, np.uint8)
             img_array = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
@@ -73,16 +74,10 @@ class TransformImage:
             return []
 
         try:
-            result = self.ocr.ocr(img_array)
-            all_texts = []
-            if result and len(result) > 0:
-                ocr_result = result[0]
-                if hasattr(ocr_result, 'rec_texts'):
-                    all_texts = list(ocr_result.rec_texts)
-                elif isinstance(ocr_result, dict) and 'rec_texts' in ocr_result:
-                    all_texts = ocr_result['rec_texts']
-                elif isinstance(ocr_result, list):
-                    all_texts = [line[1][0] for line in ocr_result if isinstance(line, (list, tuple)) and len(line) > 1]
+            # EasyOCR readtext 返回格式: [(box, text, confidence), ...]
+            results = self.ocr.readtext(img_array)
+            # 只提取文字部分
+            all_texts = [text for (box, text, conf) in results]
             return all_texts
         except Exception:
             return []         

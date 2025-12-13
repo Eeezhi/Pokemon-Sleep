@@ -5,14 +5,6 @@ from PIL import Image
 from filepath import img_path
 from streamlit.components.v1 import html
 
-#为了兼容python 3.8
-import sys
-try:
-    import zoneinfo
-except ImportError:
-    import backports.zoneinfo as zoneinfo
-    sys.modules["zoneinfo"] = zoneinfo
-
 class Pages:
     base_url = "http://localhost:8501/" #本地调试
     calculator = base_url + "宝可梦潜力计算器"
@@ -20,7 +12,7 @@ class Pages:
     pokemon_info = base_url + "宝可梦资料与食材"
 
 
-st.title("Pokemon Sleep 小幫手首頁")
+st.title("Pokemon Sleep 小工具首页")
 
 image = Image.open(os.path.join(img_path, "pokemon_sleep.png"))
 st.image(image, width="stretch", output_format="png")

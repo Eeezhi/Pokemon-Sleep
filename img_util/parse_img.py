@@ -8,6 +8,7 @@ import pandas as pd
 import cv2
 import numpy as np
 from io import BytesIO
+from img_util.text_correction import correct_ocr_text, remove_english, extract_pokemon_name
 
 raw_DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "dbdata")
 
@@ -63,6 +64,30 @@ class TransformImage:
         self.img = img
         self.ocr = load_ocr()   # 缓存的 EasyOCR Reader 实例
 
+    def preprocess_image(self, img_array):
+        """图像预处理，提高OCR识别率"""
+        # 1. 转灰度
+        gray = cv2.cvtColor(img_array, cv2.COLOR_BGR2GRAY)
+        
+        # 2. 降噪
+        denoised = cv2.fastNlMeansDenoising(gray, None, 10, 7, 21)
+        
+        # 3. 自适应二值化（对不同亮度区域效果更好）
+        binary = cv2.adaptiveThreshold(
+            denoised, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+            cv2.THRESH_BINARY, 11, 2
+        )
+        
+        # 4. 锐化（可选，增强边缘）
+        kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
+        sharpened = cv2.filter2D(binary, -1, kernel)
+        
+        # 5. 调整对比度
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+        enhanced = clahe.apply(denoised)
+        
+        return enhanced
+    
     def extract_text_from_img(self):
         try:
             # 将二进制数据转成 OpenCV 图像
@@ -76,17 +101,22 @@ class TransformImage:
             return []
 
         try:
-            # 用 EasyOCR 识别繁体中文
-            result = self.ocr.readtext(img_array)
+            # 图像预处理
+            processed_img = self.preprocess_image(img_array)
+            
+            # 用 EasyOCR 识别繁体中文（使用预处理后的图像）
+            result = self.ocr.readtext(processed_img, detail=1)
             # EasyOCR 返回 [(bbox, text, confidence), ...]
-            # 提取所有文本
+            # 提取所有文本，不过滤置信度
             all_texts = [text.strip() for (bbox, text, conf) in result if text.strip()]
             
-            # 临时调试：显示识别到的原始文本
+            # 临时调试：显示识别到的原始文本和置信度
             st.write("🔍 OCR 识别到的文本行数:", len(all_texts))
             if all_texts:
-                with st.expander("📝 查看识别的原始文本"):
-                    st.write(all_texts)
+                with st.expander("📝 查看识别的原始文本（带置信度）"):
+                    for (bbox, text, conf) in result:
+                        if text.strip():
+                            st.write(f"{text.strip()} (置信度: {conf:.2f})")
             else:
                 st.warning("⚠️ OCR 未识别到任何文本")
             
@@ -97,10 +127,6 @@ class TransformImage:
        
     
     def filter_text(self, result):
-        
-        def sub_eng(text):
-            # 移除英文字
-            return re.sub(u'[A-Za-z]', '', text)
         
         if not result:
             st.warning("⚠️ filter_text 收到空列表")
@@ -115,54 +141,30 @@ class TransformImage:
         for idx, text in enumerate(all_texts):
             if not text or not isinstance(text, str):
                 continue
-                
-            text = text.strip()
             
-            # OCR 常见错误修正（EasyOCR 特定）
-            text = text.replace('$', 'S')  # $ → S
-            text = text.replace('|', 'S')  # | → S
-            text = text.replace('兔', 'S')  # 兔 → S
-            text = text.replace('瘋', '癒')  # 瘋 → 癒
-            text = text.replace('癥', '癒')  # 癥 → 癒
-            text = text.replace('青', '害')  # 青 → 害
-            text = text.replace('盜', '持')  # 盜 → 持
-            text = text.replace('複', '復')  # 複 → 復
-            text = text.replace('凶', 'M')  # 凶 → M
-            text = text.replace('日', 'M')  # 日 → M
-            text = text.replace('氏', 'E')  # 氏 → E (睡眠EXP)
-            text = text.replace('人?', 'XP')  # 人? → XP (EXP)
-            
-            # 修正技能等级后缀（S/M/L）
-            # 数字 5 → S
-            if '速度5' in text or '提升5' in text or '上限5' in text:
-                text = text.replace('速度5', '速度S').replace('提升5', '提升S').replace('上限5', '上限S')
-            
-            # 修正睡眠EXP相关错误
-            if '睡眠E' in text and 'XP' not in text:
-                text = text.replace('睡眠E', '睡眠EXP')
-            if 'EXP獲得量' in text:
-                text = text.replace('EXP獲得量', 'EXP獎勵')
-            
-            # 技能名称中的 1 → M（只在特定上下文中替换）
-            if '提升1' in text or '提升l' in text:
-                text = text.replace('提升1', '提升M').replace('提升l', '提升M')
-            if '上限1' in text or '上限l' in text:
-                text = text.replace('上限1', '上限M').replace('上限l', '上限M')
+            # 应用所有OCR修正规则
+            text = correct_ocr_text(text)
             
             # 对于中文文本，不要做大写转换，直接匹配
             # 但英文部分需要转大写用于匹配
             text_upper = text.upper()
-            text_no_eng = sub_eng(text_upper)  # 去掉英文后可能还有中文
+            text_no_eng = remove_english(text_upper)  # 去掉英文后可能还有中文
+            
+            # 尝试从文本中提取宝可梦名字（移除Lv.前缀）
+            pokemon_name_extracted = extract_pokemon_name(text)
             
             # 检查是否匹配宝可梦（直接用原始文本和去英文版本）
             if text in pokemons_list:
                 info['pokemon'] = text
             elif text_no_eng in pokemons_list:
                 info['pokemon'] = text_no_eng
+            elif pokemon_name_extracted in pokemons_list:
+                # 匹配去除Lv.前缀后的名字
+                info['pokemon'] = pokemon_name_extracted
             # 模糊匹配宝可梦（检查文本中是否包含宝可梦名称）
             elif 'pokemon' not in info:
                 for pokemon_name in pokemons_list:
-                    if len(pokemon_name) >= 3 and pokemon_name in text:
+                    if len(pokemon_name) >= 3 and (pokemon_name in text or pokemon_name in pokemon_name_extracted):
                         info['pokemon'] = pokemon_name
                         break
             
@@ -199,6 +201,13 @@ class TransformImage:
         if info:
             with st.expander("✅ 提取到的信息"):
                 st.json(info)
+            
+            # 如果没有识别到宝可梦，显示可能的宝可梦名字供手动选择
+            if 'pokemon' not in info:
+                st.warning("⚠️ 未能识别到宝可梦，可能原因：")
+                st.write("1. 宝可梦不在数据库中")
+                st.write("2. OCR识别文字有误")
+                st.write("3. 请检查识别的原始文本中是否包含宝可梦名字")
         else:
             st.warning("⚠️ 未能从文本中提取到有效信息")
         

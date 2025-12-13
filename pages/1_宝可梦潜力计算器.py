@@ -6,23 +6,23 @@ from filepath import img_path, database_path
 #from google.oauth2 import service_account
 
 st.set_page_config(page_title="Pokemon Sleep App", layout="wide")
-st.title("Pokemon Sleep 寶可夢潛力計算機")
-st.caption("上傳寶可夢的截圖，自動取得圖片資訊，並可一鍵計算潛力評價")
-#st.caption("- 2024/02/01 更新最新寶可夢，包含童偶熊、拉魯拉絲、迷你龍")
-st.caption("- 並且依照原計算機的調整：調降夢之碎片的能量值")
+st.title("Pokemon Sleep 宝可梦潜力计算器")
+st.caption("上传宝可梦的截图，自动获取图片信息，并可一键计算潜力评价")
+#st.caption("- 2024/02/01 更新最新宝可梦，包含童偶熊、拉鲁拉丝、迷你龙")
+st.caption("- 并且依照原计算机的调整：调降梦之碎片的能量值")
 
-uploaded_file = st.file_uploader("上傳截圖", type=["jpg", "png"])
+uploaded_file = st.file_uploader("上传截图", type=["jpg", "png"])
 st.divider()
 
 if uploaded_file is not None:
-    with st.status("圖片上傳中...") as status:
+    with st.status("截图上传中...") as status:
         from pages.util.util import process_img
         from img_util.parse_img import TransformImage
         img = uploaded_file.getvalue()
-        status.update(label="辨識圖片中...", state="running")
+        status.update(label="截图识别中...", state="running")
         
         info = process_img(img)
-        status.update(label="圖片辨識完成！", state="complete")
+        status.update(label="截图识别完成！", state="complete")
 
     # 顯示圖片（缩小显示）
     # st.header('上傳的圖片')
@@ -30,7 +30,7 @@ if uploaded_file is not None:
     st.image(Image.open(uploaded_file), width=400)
 
     # 顯示擷取結果到文字輸入框
-    st.header("圖片辨識結果")
+    st.header("截图识别")
 
     if info.get("pokemon"):
         with st.form("my_form"):
@@ -116,10 +116,10 @@ if uploaded_file is not None:
                     st.write(":small_blue_diamond: DOWN: ", nature_down)
                 
                 # Submit button outside nature check to avoid missing button warning
-                submitted = st.form_submit_button("計算能力")
+                submitted = st.form_submit_button("潜力值计算")
 
                 if submitted and nature:
-                    with st.status("計算中...") as status:
+                    with st.status("计算中...") as status:
                         from img_util.calculator import calculator
                         ingredient_2_energy = get_ingredient_dict_from_bq(ingredient_2)['energy']
                         ingredient_3_energy = get_ingredient_dict_from_bq(ingredient_3)['energy']
@@ -143,7 +143,7 @@ if uploaded_file is not None:
         st.warning("⚠️ 无法识别宝可梦名稱，请上传更清晰的截圖")
 
 else:
-    st.header("截圖範例")
-    st.write("左上角寶可夢方框剛好「遮住第一個食材」，並且最底部剛好出現「性格」")
+    st.header("截图示例")
+    st.write("左上角宝可梦方框刚好「遮住第一个食材」，并且最底部刚好出现「性格」")
     example_img = os.path.join(img_path, "test1.PNG")
     st.image(example_img ,width=400) #缩小显示

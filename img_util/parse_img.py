@@ -56,7 +56,7 @@ ingredient_list = get_db_item_list('airbyte_raw_Ingredient')
 @st.cache_resource
 def load_ocr():
     """加载 EasyOCR Reader，使用繁体中文模型"""
-    return easyocr.Reader(['ch_tra'], gpu=True)
+    return easyocr.Reader(['ch_tra'], gpu=False)
 
 class TransformImage:
     def __init__(self, img):

@@ -64,35 +64,46 @@ class TransformImage:
         self.ocr = load_ocr()   # 缓存的 EasyOCR Reader 实例
 
     def extract_text_from_img(self):
-        """使用 EasyOCR 从图片中提取文字"""
         try:
+            # 将二进制数据转成 OpenCV 图像
             nparr = np.frombuffer(self.img, np.uint8)
             img_array = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
             if img_array is None:
+                st.error("⚠️ 图像解码失败")
                 return []
-        except Exception:
+        except Exception as e:
+            st.error(f"⚠️ 图像读取异常: {str(e)}")
             return []
 
         try:
-            # EasyOCR readtext 返回格式: [(box, text, confidence), ...]
-            results = self.ocr.readtext(img_array)
-            # 只提取文字部分
-            all_texts = [text for (box, text, conf) in results]
+            # 用 EasyOCR 识别繁体中文
+            result = self.ocr.readtext(img_array)
+            # EasyOCR 返回 [(bbox, text, confidence), ...]
+            # 提取所有文本
+            all_texts = [text.strip() for (bbox, text, conf) in result if text.strip()]
+            
+            # 临时调试：显示识别到的原始文本
+            st.write("🔍 OCR 识别到的文本行数:", len(all_texts))
+            if all_texts:
+                with st.expander("📝 查看识别的原始文本"):
+                    st.write(all_texts)
+            else:
+                st.warning("⚠️ OCR 未识别到任何文本")
+            
             return all_texts
-        except Exception:
-            return []         
+        except Exception as e:
+            st.error(f"⚠️ OCR 识别异常: {str(e)}")
+            return []
+       
     
     def filter_text(self, result):
-        """
-        从文字列表中提取宝可梦、技能等信息
-        result: 文字列表 ['樹果', '×2', ..., '皮卡丘', ..., '樂天', ...]
-        """
         
         def sub_eng(text):
             # 移除英文字
             return re.sub(u'[A-Za-z]', '', text)
         
         if not result:
+            st.warning("⚠️ filter_text 收到空列表")
             return {}
         
         # result 应该是一个简单的文字列表
@@ -107,6 +118,18 @@ class TransformImage:
                 
             text = text.strip()
             
+            # OCR 常见错误修正（EasyOCR 特定）
+            text = text.replace('$', 'S')  # $ → S
+            text = text.replace('兔', 'S')  # 兔 → S
+            text = text.replace('瘋', '癒')  # 瘋 → 癒
+            text = text.replace('癥', '癒')  # 癥 → 癒
+            text = text.replace('青', '害')  # 青 → 害
+            text = text.replace('盜', '持')  # 盜 → 持
+            text = text.replace('複', '復')  # 複 → 復
+            text = text.replace('l', 'M')  # 持有上限提升l → 持有上限提升M
+            text = text.replace('凶', 'M') # 凶 → M
+            text = text.replace('升1', 'M') 
+            
             # 对于中文文本，不要做大写转换，直接匹配
             # 但英文部分需要转大写用于匹配
             text_upper = text.upper()
@@ -120,34 +143,25 @@ class TransformImage:
             # 检查是否匹配主技能
             elif text in main_skills_list:
                 info['main_skill'] = text
-            elif text.replace('瘋', '癒') in main_skills_list:
-                info['main_skill'] = text.replace('瘋', '癒')
-            elif text.replace('癥', '癒') in main_skills_list:
-                info['main_skill'] = text.replace('癥', '癒')
             # 检查是否匹配性格
             elif text in natures_list:
                 info['nature'] = text
-            elif text.replace('青', '害') in natures_list:
-                info['nature'] = text.replace('青', '害')
             # 检查是否匹配副技能
             elif text in sub_skills_list:
                 info[f'sub_skill_{sub_skill_idx}'] = text
                 sub_skill_idx += 1
-            elif text.replace('盜', '持') in sub_skills_list:
-                info[f'sub_skill_{sub_skill_idx}'] = text.replace('盜', '持')
-                sub_skill_idx += 1
-            elif text.replace('複', '復') in sub_skills_list:
-                info[f'sub_skill_{sub_skill_idx}'] = text.replace('複', '復')
-                sub_skill_idx += 1
+            # 尝试添加"持有"前缀
             elif f'持有{text}' in sub_skills_list:
                 info[f'sub_skill_{sub_skill_idx}'] = f'持有{text}'
                 sub_skill_idx += 1 
-            else:
-                text_replaced = text.replace('盜', '持')
-                if f'持有{text_replaced}' in sub_skills_list:
-                    info[f'sub_skill_{sub_skill_idx}'] = f'持有{text_replaced}'
-                    sub_skill_idx += 1 
 
+        # 临时调试：显示提取到的信息
+        if info:
+            with st.expander("✅ 提取到的信息"):
+                st.json(info)
+        else:
+            st.warning("⚠️ 未能从文本中提取到有效信息")
+        
         return info
     
     def run(_self):

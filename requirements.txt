@@ -1,9 +1,9 @@
-pandas==2.0.3
-numpy==1.24.4
-numba==0.57.1
-shap==0.42.1
-Pillow==9.5.0
-pytesseract==0.3.10
-opencv-python==4.8.0.74
+pandas>=2.2.0
+numpy>=1.26.0
+numba>=0.59.0
+shap>=0.44.0
+Pillow>=10.0.0
+pytesseract>=0.3.10
+opencv-python>=4.9.0
 easyocr>=1.7.0
-streamlit>=1.26.0
+streamlit>=1.30.0

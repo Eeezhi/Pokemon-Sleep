@@ -76,5 +76,5 @@ def color_ingredients(val):
 
 st.dataframe(
     match_df.style.applymap(color_ingredients),
-    use_container_width=True
+    width="stretch"
 )

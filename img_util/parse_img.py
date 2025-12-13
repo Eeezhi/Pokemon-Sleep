@@ -56,7 +56,7 @@ ingredient_list = get_db_item_list('airbyte_raw_Ingredient')
 @st.cache_resource
 def load_ocr():
     """加载 EasyOCR Reader，使用繁体中文模型"""
-    return easyocr.Reader(['ch_tra'], gpu=False)
+    return easyocr.Reader(['ch_tra'], gpu=True)
 
 class TransformImage:
     def __init__(self, img):
@@ -120,15 +120,34 @@ class TransformImage:
             
             # OCR 常见错误修正（EasyOCR 特定）
             text = text.replace('$', 'S')  # $ → S
+            text = text.replace('|', 'S')  # | → S
             text = text.replace('兔', 'S')  # 兔 → S
             text = text.replace('瘋', '癒')  # 瘋 → 癒
             text = text.replace('癥', '癒')  # 癥 → 癒
             text = text.replace('青', '害')  # 青 → 害
             text = text.replace('盜', '持')  # 盜 → 持
             text = text.replace('複', '復')  # 複 → 復
-            text = text.replace('l', 'M')  # 持有上限提升l → 持有上限提升M
-            text = text.replace('凶', 'M') # 凶 → M
-            text = text.replace('升1', 'M') 
+            text = text.replace('凶', 'M')  # 凶 → M
+            text = text.replace('日', 'M')  # 日 → M
+            text = text.replace('氏', 'E')  # 氏 → E (睡眠EXP)
+            text = text.replace('人?', 'XP')  # 人? → XP (EXP)
+            
+            # 修正技能等级后缀（S/M/L）
+            # 数字 5 → S
+            if '速度5' in text or '提升5' in text or '上限5' in text:
+                text = text.replace('速度5', '速度S').replace('提升5', '提升S').replace('上限5', '上限S')
+            
+            # 修正睡眠EXP相关错误
+            if '睡眠E' in text and 'XP' not in text:
+                text = text.replace('睡眠E', '睡眠EXP')
+            if 'EXP獲得量' in text:
+                text = text.replace('EXP獲得量', 'EXP獎勵')
+            
+            # 技能名称中的 1 → M（只在特定上下文中替换）
+            if '提升1' in text or '提升l' in text:
+                text = text.replace('提升1', '提升M').replace('提升l', '提升M')
+            if '上限1' in text or '上限l' in text:
+                text = text.replace('上限1', '上限M').replace('上限l', '上限M')
             
             # 对于中文文本，不要做大写转换，直接匹配
             # 但英文部分需要转大写用于匹配
@@ -140,8 +159,15 @@ class TransformImage:
                 info['pokemon'] = text
             elif text_no_eng in pokemons_list:
                 info['pokemon'] = text_no_eng
+            # 模糊匹配宝可梦（检查文本中是否包含宝可梦名称）
+            elif 'pokemon' not in info:
+                for pokemon_name in pokemons_list:
+                    if len(pokemon_name) >= 3 and pokemon_name in text:
+                        info['pokemon'] = pokemon_name
+                        break
+            
             # 检查是否匹配主技能
-            elif text in main_skills_list:
+            if text in main_skills_list:
                 info['main_skill'] = text
             # 检查是否匹配性格
             elif text in natures_list:
@@ -153,7 +179,21 @@ class TransformImage:
             # 尝试添加"持有"前缀
             elif f'持有{text}' in sub_skills_list:
                 info[f'sub_skill_{sub_skill_idx}'] = f'持有{text}'
-                sub_skill_idx += 1 
+                sub_skill_idx += 1
+            # 模糊匹配副技能：尝试添加 S/M/L 后缀
+            else:
+                matched = False
+                for suffix in ['S', 'M', 'L']:
+                    if f'{text}{suffix}' in sub_skills_list:
+                        info[f'sub_skill_{sub_skill_idx}'] = f'{text}{suffix}'
+                        sub_skill_idx += 1
+                        matched = True
+                        break
+                    elif f'持有{text}{suffix}' in sub_skills_list:
+                        info[f'sub_skill_{sub_skill_idx}'] = f'持有{text}{suffix}'
+                        sub_skill_idx += 1
+                        matched = True
+                        break 
 
         # 临时调试：显示提取到的信息
         if info:

@@ -38,7 +38,6 @@ def get_db_item_list(collection_name: str):
 
     df = pd.read_csv(file_path)
 
-    # 默认返回 name 列作为列表
     if "name" in df.columns:
         return df["name"].dropna().unique().tolist()
     else:
@@ -110,13 +109,11 @@ class TransformImage:
             # 提取所有文本，不过滤置信度
             all_texts = [text.strip() for (bbox, text, conf) in result if text.strip()]
             
-            # 临时调试：显示识别到的原始文本和置信度
+            # 临时调试：显示识别到的原始文本（不显示置信度）
             st.write("🔍 OCR 识别到的文本行数:", len(all_texts))
             if all_texts:
-                with st.expander("📝 查看识别的原始文本（带置信度）"):
-                    for (bbox, text, conf) in result:
-                        if text.strip():
-                            st.write(f"{text.strip()} (置信度: {conf:.2f})")
+                with st.expander("📝 查看识别的原始文本"):
+                    st.write(all_texts)
             else:
                 st.warning("⚠️ OCR 未识别到任何文本")
             

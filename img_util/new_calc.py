@@ -27,6 +27,10 @@ def fruit_type(sub_skills, nature_up, nature_down):
     help_bonus = has_helper_bonus(sub_skills)
     fruit_s = has_fruit_bonus(sub_skills)
     help_speed = get_help_speed(sub_skills)
+    
+    # 初始化默认值
+    score = None
+    result = None
         
     # 读取效率数据
     efficient_data = pd.read_csv('data/Efficient/Efficient_help_fruit.csv')
@@ -37,7 +41,7 @@ def fruit_type(sub_skills, nature_up, nature_down):
             (efficient_data['help_speed'] == help_speed)
         ]
     if filtered_data.empty:
-        result = "宝可梦不可用"
+        result = "宝可梦不可用" 
     else:
         for j in filtered_data.itertuples():
             if nature_up == '幫忙速度':
@@ -57,9 +61,10 @@ def skill_type(sub_skills, nature_up, nature_down):
     help_bonus = has_helper_bonus(sub_skills)
     prob = get_skill_prob(sub_skills)
     help_speed = get_help_speed(sub_skills)
-    if nature_up == '主技能發動機率':
+    # 兼容性格字段：資料表為「主技能」，OCR/界面可能為「主技能發動機率」
+    if nature_up in ('主技能發動機率', '主技能'):
         nature_skill_prob = 2
-    elif nature_down == '主技能發動機率':
+    elif nature_down in ('主技能發動機率', '主技能'):
         nature_skill_prob = 0
     else:
         nature_skill_prob = 1
@@ -101,9 +106,13 @@ def ingredient_type(sub_skills, nature_up, nature_down):
     help_bonus = has_helper_bonus(sub_skills)
     prob = get_ingredient_prob(sub_skills)
     help_speed = get_help_speed(sub_skills)
-    if nature_up == '食材發現率':
+    # 仅取前三个副技能参与食材概率逻辑：界面只传 3 条，因此强制归零避免误计
+    if len(sub_skills) <= 3:
+        prob = 0
+    # 兼容性格字段：資料表為「食材發現」，OCR/界面可能為「食材發現率」
+    if nature_up in ('食材發現率', '食材發現'):
         nature_ingredient_prob = 2
-    elif nature_down == '食材發現率':
+    elif nature_down in ('食材發現率', '食材發現'):
         nature_ingredient_prob = 0
     else:
         nature_ingredient_prob = 1
@@ -134,7 +143,9 @@ def ingredient_type(sub_skills, nature_up, nature_down):
                 score = j.nature_help_none
                 result = j.result2
         if score is None:
-            result = "宝可梦不可用" 
+            result = "宝可梦不可用"
+    
+    return score, result
 
 def get_skill_prob(sub_skills):
     """

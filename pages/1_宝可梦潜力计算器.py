@@ -15,24 +15,16 @@ st.divider()
 
 if uploaded_file is not None:
     with st.status("圖片上傳中...") as status:
-        from pages.util.util import process_img
-        from img_util.parse_img import TransformImage
         img = uploaded_file.getvalue()
         status.update(label="辨識圖片中...", state="running")
-        
-        # 直接调用 TransformImage 来看原始 OCR 结果
-        transform_img = TransformImage(img)
-        ocr_raw_result = transform_img.extract_text_from_img()
-        
-        info = process_img(img)
-        status.update(label="圖片辨識完成！", state="complete")
-        
-    # 调试：输出原始 OCR 结果
-    with st.expander("🔍 **調試信息** - 原始 OCR 結果（點擊展開）"):
-        st.write("**OCR 原始結果結構：**")
-        st.json(ocr_raw_result)
-        st.write("**解析後的 info：**")
-        st.json(info)
+
+    # 使用 parse_img_v2.py 的 TransformImage 来解析图片（支持表格识别）
+    from img_util.parse_img_v2 import TransformImage
+    
+    transformer = TransformImage(img)
+    info = transformer.run()  # 返回解析后的字典：{'pokemon': ..., 'main_skill': ..., 'sub_skill_1': ..., 'nature': ...}
+    
+    status.update(label="辨識完成！", state="complete")
 
     # 顯示圖片（缩小显示）
     # st.header('上傳的圖片')
@@ -76,6 +68,9 @@ if uploaded_file is not None:
                 sub_skills_list = get_item_list_from_bq("SubSkill")
                 sub_skills_list = sorted(sub_skills_list)
                 sub_skills_list.insert(0, "---")
+                
+                st.info("💡 提示：OCR识别的副技能顺序可能不正确。请按照游戏中从**左到右、再从上到下**的顺序调整。")
+                
                 try:
                     sub_skill_1 = st.text_input("副技能1", value=f"{info['sub_skill_1']}")
                 except:
@@ -97,7 +92,8 @@ if uploaded_file is not None:
                 except:
                     sub_skill_5 = st.selectbox(":orange[副技能5]", sub_skills_list)
 
-                sub_skills = [sub_skill_1, sub_skill_2, sub_skill_3, sub_skill_4, sub_skill_5]
+                #sub_skills = [sub_skill_1, sub_skill_2, sub_skill_3, sub_skill_4, sub_skill_5]
+                sub_skills = [sub_skill_1, sub_skill_2, sub_skill_3]
 
                 # Ingredient 2 and 3
                 ingredient_list = get_item_list_from_bq("Ingredient")
@@ -148,9 +144,9 @@ if uploaded_file is not None:
                         status.update(label="計算完成！", state="complete", expanded=True)
                         if score is not None:
                             st.header(f"效率: :blue[{score}]")
-                            st.header(f"評價: :blue[{result}]")
+                            st.header(f"评价: :blue[{result}]")
                         else:
-                            st.header(f"評價: :blue[{result}]")
+                            st.header(f"评价: :blue[{result}]")
     else:
         st.warning("⚠️ 无法识别宝可梦名稱，请上传更清晰的截圖")
         st.info("OCR 识别结果:")

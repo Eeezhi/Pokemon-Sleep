@@ -307,5 +307,4 @@ class TransformImage:
     def run(_self):
         result = _self.extract_text_from_img()
         info = _self.filter_text(result)
-        print(f"{datetime.now()}: {info}")
         return info

@@ -27,15 +27,6 @@ https://eeezhisalt.top/pokemonsleep/
 - Docker (Container)
 - VS Code (IDE)
 
-
-## Project Flow Chart
-
-舊版
-- ![project flow chart](img/pokemon_sleep_project_flow.png)
-
-新版
-- 🏗️👷 WIP
-
 ## TODO
 - [ ] 将图鉴从2024年版本更新至最新版本
 

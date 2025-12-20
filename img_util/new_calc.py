@@ -1,7 +1,12 @@
 import numpy as np
 import pandas as pd
+import os
 
 #全新计算方法 Y.Huang 2025.12.20
+
+# 获取当前脚本目录的上层（Pokemon-Sleep），以便访问 data/ 文件夹
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+EFFICIENT_DIR = os.path.join(BASE_DIR, 'data', 'Efficient')
 
 def has_helper_bonus(sub_skills):
     """检查副技能中是否包含幫手獎勵"""
@@ -33,7 +38,7 @@ def fruit_type(sub_skills, nature_up, nature_down):
     result = None
         
     # 读取效率数据
-    efficient_data = pd.read_csv('data/Efficient/Efficient_help_fruit.csv')
+    efficient_data = pd.read_csv(os.path.join(EFFICIENT_DIR, 'Efficient_help_fruit.csv'))
     # 根据fruit_s和help_speed筛选数据
     filtered_data = efficient_data[
             (efficient_data['help_bonus'] == int(help_bonus)) &
@@ -69,7 +74,7 @@ def skill_type(sub_skills, nature_up, nature_down):
     else:
         nature_skill_prob = 1
     # 读取效率数据
-    efficient_data = pd.read_csv('data/Efficient/Efficient_help_skill.csv')
+    efficient_data = pd.read_csv(os.path.join(EFFICIENT_DIR, 'Efficient_help_skill.csv'))
     # 根据prob, help_speed和nature_skill_prob筛选数据
     filtered_data = efficient_data[
             (efficient_data['help_bonus'] == int(help_bonus)) &
@@ -117,7 +122,7 @@ def ingredient_type(sub_skills, nature_up, nature_down):
     else:
         nature_ingredient_prob = 1
     # 读取效率数据
-    efficient_data = pd.read_csv('data/Efficient/Efficient_help_ingredient.csv')
+    efficient_data = pd.read_csv(os.path.join(EFFICIENT_DIR, 'Efficient_help_ingredient.csv'))
     # 根据prob, help_speed和nature_ingredient_prob筛选数据
     filtered_data = efficient_data[
             (efficient_data['help_bonus'] == int(help_bonus)) &

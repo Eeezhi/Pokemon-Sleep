@@ -15,9 +15,9 @@ uploaded_file = st.file_uploader("上传截图", type=["jpg", "png"])
 st.divider()
 
 if uploaded_file is not None:
-    with st.status("圖片上傳中...") as status:
+    with st.status("图片上传中...") as status:
         img = uploaded_file.getvalue()
-        status.update(label="辨識圖片中...", state="running")
+        status.update(label="识别图片中...", state="running")
 
     # 使用 parse_img_v2.py 的 TransformImage 来解析图片（支持表格识别）
     from img_util.parse_img_v2 import TransformImage
@@ -25,7 +25,7 @@ if uploaded_file is not None:
     transformer = TransformImage(img)
     info = transformer.run()  # 返回解析后的字典：{'pokemon': ..., 'main_skill': ..., 'sub_skill_1': ..., 'nature': ...}
     
-    status.update(label="辨識完成！", state="complete")
+    status.update(label="识别完成！", state="complete")
 
     # 顯示圖片（缩小显示）
     # st.header('上傳的圖片')
@@ -123,7 +123,7 @@ if uploaded_file is not None:
                 submitted = st.form_submit_button("潜力值计算")
 
                 if submitted and nature:
-                    with st.status("計算中...") as status:
+                    with st.status("计算中...") as status:
                         from img_util.new_calc import calculator
                         ingredient_2_energy = get_ingredient_dict_from_bq(ingredient_2)['energy']
                         ingredient_3_energy = get_ingredient_dict_from_bq(ingredient_3)['energy']
@@ -139,7 +139,7 @@ if uploaded_file is not None:
                         }
 
                         score, result = calculator(**info_dict)
-                        status.update(label="計算完成！", state="complete", expanded=True)
+                        status.update(label="计算完成！", state="complete", expanded=True)
 
                         if score is not None:
                             st.markdown(f"### 宝可梦效率：**{score}**")

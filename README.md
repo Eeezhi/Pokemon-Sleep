@@ -3,12 +3,12 @@
 ![pokemon_sleep](img/pokemon_sleep.png)
 
 ## Try it
-https://pokemon-sleep.streamlit.app/
+https://eeezhisalt.top/pokemonsleep/
 
 ## Latest Updates
-- 2024/02/01 更新
-  - 新增最新寶可夢，包含童偶熊、拉魯拉絲、迷你龍
-  - 並且依照原計算機的調整：調降夢之碎片的能量值
+- 2025/12/20更新
+ - 宝可梦的元数据从Google Sheet/Airbyte/BigQuery变成了本地csv文件，方便自己添加
+ - ocr组件从本地的paddleocr/easyocr变成了free ocr api，低功耗嵌入式等网站服务器也可以运行
 
 ## 目前功能
 
@@ -24,14 +24,9 @@ https://pokemon-sleep.streamlit.app/
 - Python
   - Data process: `numpy`, `pandas`
   - Crawler: `requests`, `BeautifulSoup`, `fake_useragent`
-- BigQuery (Data Warehouse)
-- Airbyte (Data Extract & Load)
-- Google Sheet (Raw Data)
 - Docker (Container)
-- Conda (Python Virtual Environment)
 - VS Code (IDE)
-- Text Detection (OCR 光學字元辨識)
-  - `OpenCV`, `PyTesseract`, `EasyOCR`, `PaddleOCR`
+
 
 ## Project Flow Chart
 
@@ -41,50 +36,8 @@ https://pokemon-sleep.streamlit.app/
 新版
 - 🏗️👷 WIP
 
-## 可能新增功能優先度
-- [x] 寶可夢的產出食材頁面 (Multipage apps)
-- [x] 食材圖片 (`st.column_config.ImageColumn`)
-- [x] 機器學習預測樹果提供的能量（目前特徵: 寶可夢等級, 寶可夢SP）
-- [x] 自動文字辨識：寶可夢截圖資訊
-- [x] 藉由圖片辨識的文字來計算寶可夢能力
-- [x] 新增入口首頁
-- [ ] 技能文字模糊比對，提升圖片辨識的準確率（[TheFuzz](https://github.com/seatgeek/thefuzz)）
-
-## 圖片辨識文字
-
-- [PyTesseract](https://github.com/madmaze/pytesseract) 辨識速度快但較不準確
-  - 部署需要 `packages.txt` 裡面放
-    -  `tesseract-ocr`
-    -  `tesseract-ocr-chi-tra`
-- [EasyOCR](https://github.com/JaidedAI/EasyOCR) 辨識速度慢但感覺較準確
-- [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) 辨識速度快又準確（目前採用此套件）
-  - `packages.txt`
-    - `libgl1-mesa-glx`
-  - 只有首次執行會較久，因為會下載和讀取 model
-    ```
-    download https://paddleocr.bj.bcebos.com/PP-OCRv3/multilingual/Multilingual_PP-OCRv3_det_infer.tar 
-    to /home/appuser/.paddleocr/whl/det/ml/Multilingual_PP-OCRv3_det_infer/Multilingual_PP-OCRv3_det_infer.tar
-    100%|██████████| 3.85M/3.85M [00:13<00:00, 287kiB/s][2023-09-02 12:58:56.839097]  
-
-    download https://paddleocr.bj.bcebos.com/PP-OCRv3/multilingual/chinese_cht_PP-OCRv3_rec_infer.tar 
-    to /home/appuser/.paddleocr/whl/rec/chinese_cht/chinese_cht_PP-OCRv3_rec_infer/chinese_cht_PP-OCRv3_rec_infer.tar
-    100%|██████████| 12.3M/12.3M [00:15<00:00, 805kiB/s] [2023-09-02 12:59:13.296936] 
-
-    download https://paddleocr.bj.bcebos.com/dygraph_v2.0/ch/ch_ppocr_mobile_v2.0_cls_infer.tar 
-    to /home/appuser/.paddleocr/whl/cls/ch_ppocr_mobile_v2.0_cls_infer/ch_ppocr_mobile_v2.0_cls_infer.tar
-    100%|██████████| 2.19M/2.19M [00:10<00:00, 214kiB/s][2023-09-02 12:59:26.396503]  
-    ```
-
-### 輸出結果範例
-
-- PaddleOCR
-
-![paddleOCR result](img/result_paddleOCR/result.jpg)
-![paddleOCR result1](img/result_paddleOCR/result1.jpg)
-
-- EasyOCR
-
-![out_box](img/out_box.png)
+## TODO
+- [ ] 将图鉴从2024年版本更新至最新版本
 
 ## 資料來源
 

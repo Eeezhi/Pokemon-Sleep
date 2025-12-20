@@ -31,13 +31,15 @@ def correct_ocr_text(text: str) -> str:
     # ========== 第二步：符号和字符替换 ==========
     text = text.replace('$', 'S')  # $ → S
     text = text.replace('|', 'S')  # | → S
-    text = text.replace('兔', 'S')  # 兔 → S
+    text = text.replace('兔', 'M')  # 兔 → M
     text = text.replace('舊', 'S')  # 舊 → S (技能等级)
     text = text.replace('?', 'E')  # ? → E
     text = text.replace('冑', 'M')  # 冑 → M
     text = text.replace(';', ',')  # ; → ，
+    text = text.replace('臺', 'M')  # 癲 → 夢
     
     # 中文字修正
+    text = text.replace('芎', '夢')  # 癲 → 癒
     text = text.replace('瘋', '癒')  # 瘋 → 癒
     text = text.replace('癥', '癒')  # 癥 → 癒
     text = text.replace('青', '害')  # 青 → 害

@@ -326,18 +326,18 @@ def get_ingredient_dict_from_bq(ingredient: str) -> dict:
 
     return matched.iloc[0].to_dict()
 
-def get_rank_color_text(rank: str) -> str | None:
-    rank_color_dict = {
-        "SSS": f"評價: :rainbow[{rank}]",
-        "SS": f"評價: :rainbow[{rank}]",
-        "S": f"評價: :rainbow[{rank}]",
-        "A": f"評價: :red[{rank}]",
-        "B": f"評價: :violet[{rank}]",
-        "C": f"評價: :blue[{rank}]",
-        "D": f"評價: {rank}",
-        "E": f"評價: {rank}",
-    }
-    return rank_color_dict.get(rank)
+# def get_rank_color_text(rank: str) -> str | None:
+#     rank_color_dict = {
+#         "SSS": f"評價: :rainbow[{rank}]",
+#         "SS": f"評價: :rainbow[{rank}]",
+#         "S": f"評價: :rainbow[{rank}]",
+#         "A": f"評價: :red[{rank}]",
+#         "B": f"評價: :violet[{rank}]",
+#         "C": f"評價: :blue[{rank}]",
+#         "D": f"評價: {rank}",
+#         "E": f"評價: {rank}",
+#     }
+#     return rank_color_dict.get(rank)
 
 
 # os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = st.secrets['bq_credentials_filepath']

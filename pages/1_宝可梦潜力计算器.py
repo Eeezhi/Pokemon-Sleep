@@ -141,8 +141,11 @@ if uploaded_file is not None:
                         score, result = calculator(**info_dict)
                         status.update(label="計算完成！", state="complete", expanded=True)
 
-                        st.header(f"能量積分: :blue[{energy_score}]")
-                        st.header(get_rank_color_text(rank))
+                        if score is not None:
+                            st.markdown(f"### 宝可梦效率：**{score}**")
+                            st.markdown(f"### 评价结果：**{result}**")
+                        else:
+                            st.markdown(f"### 评价结果：**{result}**")
     else:
         st.warning("⚠️ 无法识别宝可梦名稱，请上传更清晰的截圖")
 

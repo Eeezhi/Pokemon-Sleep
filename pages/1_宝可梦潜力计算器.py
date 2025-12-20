@@ -47,7 +47,7 @@ if uploaded_file is not None:
             from pages.util.util import (
                 #get_pokemon_info_from_bq,
                 get_pokemon_info_local,
-                get_rank_color_text,
+                #get_rank_color_text,
                 get_item_list_from_bq,
                 get_nature_dict_from_bq,
                 get_ingredient_dict_from_bq,
@@ -130,7 +130,7 @@ if uploaded_file is not None:
 
                 if submitted and nature:
                     with st.status("計算中...") as status:
-                        from img_util.calculator import calculator
+                        from img_util.new_calc import calculator
                         ingredient_2_energy = get_ingredient_dict_from_bq(ingredient_2)['energy']
                         ingredient_3_energy = get_ingredient_dict_from_bq(ingredient_3)['energy']
                         info_dict = {
@@ -138,17 +138,19 @@ if uploaded_file is not None:
                             'nature_up': nature_up,
                             'nature_down': nature_down,
                             'sub_skills': sub_skills,
-                            'ingredient_2_num': int(ingredient_2_num),
-                            'ingredient_2_energy': int(ingredient_2_energy),
-                            'ingredient_3_num': int(ingredient_3_num),
-                            'ingredient_3_energy': int(ingredient_3_energy),
+                            # 'ingredient_2_num': int(ingredient_2_num),
+                            # 'ingredient_2_energy': int(ingredient_2_energy),
+                            # 'ingredient_3_num': int(ingredient_3_num),
+                            # 'ingredient_3_energy': int(ingredient_3_energy),
                         }
 
-                        energy_score, rank = calculator(**info_dict)
+                        score, result = calculator(**info_dict)
                         status.update(label="計算完成！", state="complete", expanded=True)
-
-                        st.header(f"能量積分: :blue[{energy_score}]")
-                        st.header(get_rank_color_text(rank))
+                        if score is not None:
+                            st.header(f"效率: :blue[{score}]")
+                            st.header(f"評價: :blue[{result}]")
+                        else:
+                            st.header(f"評價: :blue[{result}]")
     else:
         st.warning("⚠️ 无法识别宝可梦名稱，请上传更清晰的截圖")
         st.info("OCR 识别结果:")

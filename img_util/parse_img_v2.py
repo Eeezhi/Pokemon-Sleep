@@ -93,8 +93,8 @@ class TransformImage:
             resp.raise_for_status()
             result_json = resp.json()
             
-            with st.expander("🔍 Free OCR API 原始返回"):
-                st.json(result_json)
+            # with st.expander("🔍 Free OCR API 原始返回"):
+            #     st.json(result_json)
             
             if result_json.get("IsErroredOnProcessing"):
                 st.error(f"❌ OCR API 处理错误: {result_json.get('ErrorMessage', '未知错误')}")
@@ -117,13 +117,6 @@ class TransformImage:
                         filtered.append(line)
                     all_texts.extend(filtered)
             
-            st.write("🔍 OCR 识别到的文本行数:", len(all_texts))
-            if all_texts:
-                with st.expander("📝 查看识别的原始文本"):
-                    st.write(all_texts)
-            else:
-                st.warning("⚠️ OCR 未识别到任何文本")
-            
             return all_texts
         except Exception as e:
             st.error(f"⚠️ OCR 识别异常: {str(e)}")
@@ -142,11 +135,10 @@ class TransformImage:
         info = {}
         sub_skills_found = []  # (原始位置, 技能名) - 保持OCR识别顺序
         
-        # 调试：显示原始与修正后的文本，便于确认清洗效果
-        with st.expander("📋 识别文本（原始 → 修正）"):
+        # OCR 识别结果
+        with st.expander("📋 OCR 识别文本"):
             for i, text in enumerate(all_texts):
-                corrected = correct_ocr_text(text)
-                st.write(f"{i}: `{text}` → `{corrected}`")
+                st.write(f"{i}: `{text}`")
         
         # 第一遍：收集所有信息
         for i, text in enumerate(all_texts):
@@ -191,22 +183,15 @@ class TransformImage:
                     matched_skill = self._match_sub_skill(text_part)
                     if matched_skill:
                         sub_skills_found.append((i, matched_skill))
-                        st.write(f"✓ 匹配副技能：`{text_part}` → `{matched_skill}`")
         
         # 按OCR识别顺序填充副技能（不重新排序）
         for idx, (pos, skill) in enumerate(sub_skills_found, start=1):
             if idx <= 5:
                 info[f'sub_skill_{idx}'] = skill
         
-        # 调试输出
-        with st.expander("✅ 提取到的信息"):
-            st.json(info)
-            if sub_skills_found:
-                st.write(f"**识别到 {len(sub_skills_found)} 个副技能（按OCR识别顺序）：**")
-                for idx, (pos, skill) in enumerate(sub_skills_found, start=1):
-                    st.write(f"{idx}. 位置{pos}: {skill}")
-            else:
-                st.warning("⚠️ 未识别到任何副技能")
+        # 提取结果 for debug
+        # with st.expander("✅ OCR 识别结果"):
+        #     st.json(info)
         
         return info
     

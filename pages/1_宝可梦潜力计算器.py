@@ -69,8 +69,6 @@ if uploaded_file is not None:
                 sub_skills_list = sorted(sub_skills_list)
                 sub_skills_list.insert(0, "---")
                 
-                st.info("💡 提示：OCR识别的副技能顺序可能不正确。请按照游戏中从**左到右、再从上到下**的顺序调整。")
-                
                 try:
                     sub_skill_1 = st.text_input("副技能1", value=f"{info['sub_skill_1']}")
                 except:

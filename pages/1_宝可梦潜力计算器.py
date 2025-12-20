@@ -15,14 +15,17 @@ uploaded_file = st.file_uploader("上传截图", type=["jpg", "png"])
 st.divider()
 
 if uploaded_file is not None:
-    with st.status("截图上传中...") as status:
-        from pages.util.util import process_img
-        from img_util.parse_img import TransformImage
+    with st.status("圖片上傳中...") as status:
         img = uploaded_file.getvalue()
-        status.update(label="截图识别中...", state="running")
-        
-        info = process_img(img)
-        status.update(label="截图识别完成！", state="complete")
+        status.update(label="辨識圖片中...", state="running")
+
+    # 使用 parse_img_v2.py 的 TransformImage 来解析图片（支持表格识别）
+    from img_util.parse_img_v2 import TransformImage
+    
+    transformer = TransformImage(img)
+    info = transformer.run()  # 返回解析后的字典：{'pokemon': ..., 'main_skill': ..., 'sub_skill_1': ..., 'nature': ...}
+    
+    status.update(label="辨識完成！", state="complete")
 
     # 顯示圖片（缩小显示）
     # st.header('上傳的圖片')
@@ -37,7 +40,6 @@ if uploaded_file is not None:
             from pages.util.util import (
                 #get_pokemon_info_from_bq,
                 get_pokemon_info_local,
-                #get_rank_color_text,
                 get_item_list_from_bq,
                 get_nature_dict_from_bq,
                 get_ingredient_dict_from_bq,
@@ -66,6 +68,7 @@ if uploaded_file is not None:
                 sub_skills_list = get_item_list_from_bq("SubSkill")
                 sub_skills_list = sorted(sub_skills_list)
                 sub_skills_list.insert(0, "---")
+                
                 try:
                     sub_skill_1 = st.text_input("副技能1", value=f"{info['sub_skill_1']}")
                 except:
@@ -120,7 +123,7 @@ if uploaded_file is not None:
                 submitted = st.form_submit_button("潜力值计算")
 
                 if submitted and nature:
-                    with st.status("计算中...") as status:
+                    with st.status("計算中...") as status:
                         from img_util.new_calc import calculator
                         ingredient_2_energy = get_ingredient_dict_from_bq(ingredient_2)['energy']
                         ingredient_3_energy = get_ingredient_dict_from_bq(ingredient_3)['energy']
@@ -138,11 +141,8 @@ if uploaded_file is not None:
                         score, result = calculator(**info_dict)
                         status.update(label="計算完成！", state="complete", expanded=True)
 
-                        if score is not None:
-                            st.header(f"效率: :blue[{score}]")
-                            st.header(f"潜力评价: {result}")
-                        else:
-                            st.header(f"潜力评价: {result}")
+                        st.header(f"能量積分: :blue[{energy_score}]")
+                        st.header(get_rank_color_text(rank))
     else:
         st.warning("⚠️ 无法识别宝可梦名稱，请上传更清晰的截圖")
 

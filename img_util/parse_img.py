@@ -376,12 +376,6 @@ class TransformImage:
         result = _self.extract_text_from_img()
         info = _self.filter_text(result)
         
-        # 调试：如果识别不到宝可梦，显示数据库前20个宝可梦供参考
-        if 'pokemon' not in info and pokemons_list:
-            with st.expander("📖 数据库中的宝可梦示例（前30个）"):
-                st.write(pokemons_list[:30])
-        
-        print(f"{datetime.now()}")
         print(f"{info}")
         print("=========")
         return info

@@ -1,5 +1,6 @@
 import os
 import streamlit as st
+import pandas as pd
 from PIL import Image
 from filepath import img_path, database_path
 #from google.cloud import bigquery as bq
@@ -115,8 +116,7 @@ if uploaded_file is not None:
                         })
 
                     score, result = calculator(**info_dict)
-
-                    if score is not None:
+                    if pd.notna(score):
                         st.markdown(f"### 宝可梦效率：**{score}**")
                         st.markdown(f"### 评价结果：**{result}**")
                     else:

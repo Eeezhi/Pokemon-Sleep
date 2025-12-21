@@ -107,13 +107,11 @@ def skill_type(sub_skills, nature_up, nature_down):
 
 def ingredient_type(sub_skills, nature_up, nature_down):
     """對食材型寶可夢進行計算"""
-    # 使用副技能中的“食材几率提升 M/S”强度作为占位结果
+    # 使用副技能中的"食材几率提升 M/S"强度作为占位结果
     help_bonus = has_helper_bonus(sub_skills)
     prob = get_ingredient_prob(sub_skills)
     help_speed = get_help_speed(sub_skills)
-    # 仅取前三个副技能参与食材概率逻辑：界面只传 3 条，因此强制归零避免误计
-    if len(sub_skills) <= 3:
-        prob = 0
+    
     # 兼容性格字段：資料表為「食材發現」，OCR/界面可能為「食材發現率」
     if nature_up in ('食材發現率', '食材發現'):
         nature_ingredient_prob = 2

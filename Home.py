@@ -6,7 +6,7 @@ from filepath import img_path
 from streamlit.components.v1 import html
 
 class Pages:
-    base_url = "http://localhost:8501/" #本地调试
+    base_url = "https://eeezhisalt.top/pokemonsleep/" 
     calculator = base_url + "宝可梦潜力计算器"
     recipe = base_url + "食材与料理食谱"
     pokemon_info = base_url + "宝可梦资料与食材"

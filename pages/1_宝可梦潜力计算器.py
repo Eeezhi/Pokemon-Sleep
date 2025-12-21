@@ -9,7 +9,7 @@ st.set_page_config(page_title="Pokemon Sleep App", layout="wide")
 st.title("Pokemon Sleep 宝可梦潜力计算器")
 st.caption("上传宝可梦的截图，自动获取图片信息，并可一键计算潜力评价")
 #st.caption("- 2024/02/01 更新最新宝可梦，包含童偶熊、拉鲁拉丝、迷你龙")
-st.caption("- 并且依照原计算机的调整：调降梦之碎片的能量值")
+st.caption("- 计算方法出处：小红书@谜之玩家Leo，《宝可梦效率速查表》")
 
 uploaded_file = st.file_uploader("上传截图", type=["jpg", "png"])
 st.divider()
@@ -55,8 +55,8 @@ if uploaded_file is not None:
             sub_skill_4 = st.text_input("副技能4", value=info.get('sub_skill_4', ''))
             sub_skill_5 = st.text_input("副技能5", value=info.get('sub_skill_5', ''))
 
-            #sub_skills = [sub_skill_1, sub_skill_2, sub_skill_3, sub_skill_4, sub_skill_5]
-            sub_skills = [sub_skill_1, sub_skill_2, sub_skill_3]
+            sub_skills = [sub_skill_1, sub_skill_2, sub_skill_3, sub_skill_4, sub_skill_5]
+            sub_skills_for_calc = [sub_skill_1, sub_skill_2, sub_skill_3]
 
             # Ingredient 2 and 3
             ingredient_list = get_item_list_from_bq("Ingredient")
@@ -96,12 +96,23 @@ if uploaded_file is not None:
                         'pokemon_info': pokemon_info,
                         'nature_up': nature_up,
                         'nature_down': nature_down,
-                        'sub_skills': sub_skills,
+                        'sub_skills': sub_skills_for_calc,
                         # 'ingredient_2_num': int(ingredient_2_num),
                         # 'ingredient_2_energy': int(ingredient_2_energy),
                         # 'ingredient_3_num': int(ingredient_3_num),
                         # 'ingredient_3_energy': int(ingredient_3_energy),
                     }
+
+                    with st.expander("提取到的信息", expanded=False):
+                        st.json({
+                            '寶可夢名稱': pokemon_info['name'],
+                            '寶可夢類型': pokemon_info['type'],
+                            '主技能': pokemon_info['main_skill'],
+                            '副技能列表': sub_skills,
+                            '性格': nature,
+                            '性格加成': nature_up,
+                            '性格減少': nature_down
+                        })
 
                     score, result = calculator(**info_dict)
 

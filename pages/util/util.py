@@ -1,10 +1,11 @@
 import os
 import pandas as pd
+import difflib
 import numpy as np
 import streamlit as st
 #from google.cloud import bigquery as bq
 #from google.oauth2 import service_account
-from img_util.parse_img import TransformImage
+from img_util.parse_img_v2 import TransformImage
 
 # 创建 API 客户端（占位）：如果切换回 BigQuery，可解除顶部注释并使用 service_account/bq
 
@@ -186,7 +187,29 @@ df_skill = pd.read_csv(os.path.join(DATA_DIR, "MainSkill.csv"))
 @st.cache_data
 def get_pokemon_info_local(pokemon: str) -> dict | None:
     df_pokemon = pd.read_csv(os.path.join(DATA_DIR, "Pokemon.csv"))
+    # 兼容不同欄位命名：去除列名空白並做別名映射
+    df_pokemon.columns = [str(c).strip() for c in df_pokemon.columns]
+    col_alias_map = {}
+    if "ingredient" not in df_pokemon.columns:
+        for alt in ("食材1", "食材", "食材一", "食材1名稱"):
+            if alt in df_pokemon.columns:
+                col_alias_map[alt] = "ingredient"
+                break
+    if "main_skill" not in df_pokemon.columns:
+        for alt in ("技能", "主技能", "main skill"):
+            if alt in df_pokemon.columns:
+                col_alias_map[alt] = "main_skill"
+                break
+    if col_alias_map:
+        df_pokemon = df_pokemon.rename(columns=col_alias_map)
     # Pokemon.csv 的列名是 "name"，不需要重命名
+    # 防御性检查：缺少关键列时直接返回 None，避免 KeyError
+    required_cols = {"name", "ingredient", "fruit", "main_skill"}
+    if not required_cols.issubset(set(df_pokemon.columns)):
+        missing = required_cols - set(df_pokemon.columns)
+        st.warning(f"Pokemon.csv 缺少列: {', '.join(missing)}，請檢查資料格式")
+        return None
+
     df = (
         df_pokemon
         .merge(df_ingredient, left_on="ingredient", right_on="name", suffixes=("", "_ingredient"))
@@ -194,10 +217,16 @@ def get_pokemon_info_local(pokemon: str) -> dict | None:
         .merge(df_skill, left_on="main_skill", right_on="name", suffixes=("", "_skill"))
     )
 
-    # 使用 "name" 列进行查询
+    # 使用 "name" 列进行查询（找不到时尝试模糊匹配別名/近似名稱）
     subset = df[df["name"] == pokemon]
     if subset.empty:
-        return None
+        # 模糊匹配：在資料中尋找最接近的名稱（容忍 OCR 誤差如「撥/波」）
+        name_list = df["name"].astype(str).tolist()
+        candidates = difflib.get_close_matches(pokemon, name_list, n=1, cutoff=0.5)
+        if candidates:
+            subset = df[df["name"] == candidates[0]]
+        else:
+            return None
 
     row = subset.iloc[0].to_dict()
 
@@ -210,9 +239,7 @@ def get_pokemon_info_local(pokemon: str) -> dict | None:
 
     mapped = {}
     mapped['name'] = pick('name')
-    mapped['final_help_interval'] = pick('final_help_interval', '最終幫忙間隔(秒)')
     mapped['final_evolution_step'] = pick('final_evolution_step', '最終進化階段')
-    mapped['carry_limit'] = pick('carry_limit', '格子')
     mapped['type'] = pick('type', '類型')
     mapped['fruit'] = pick('fruit')
 

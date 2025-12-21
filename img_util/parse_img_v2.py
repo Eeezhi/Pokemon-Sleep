@@ -1,4 +1,5 @@
 import re
+import difflib
 from datetime import datetime
 import streamlit as st
 import warnings; warnings.filterwarnings('ignore')
@@ -9,10 +10,10 @@ import cv2
 import numpy as np
 from io import BytesIO
 
-raw_DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "dbdata")
+raw_DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 
 def get_db_item_list(collection_name: str):
-    """从 /data/dbdata 下的 CSV 文件读取数据"""
+    """从 /data 下的 CSV 文件读取数据"""
     file_path = os.path.join(raw_DATA_DIR, f"{collection_name}.csv")
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"找不到文件: {file_path}")
@@ -22,16 +23,15 @@ def get_db_item_list(collection_name: str):
     else:
         return df.columns.tolist()
 
-pokemons_list = get_db_item_list('airbyte_raw_Pokemon')
-main_skills_list = get_db_item_list('airbyte_raw_MainSkill')
-sub_skills_list = get_db_item_list('airbyte_raw_SubSkill')
-natures_list = get_db_item_list('airbyte_raw_Nature')
-ingredient_list = get_db_item_list('airbyte_raw_Ingredient')
-
+pokemons_list = get_db_item_list('Pokemon')
+main_skills_list = get_db_item_list('MainSkill')
+sub_skills_list = get_db_item_list('SubSkill')
+natures_list = get_db_item_list('Nature')
+ingredient_list = get_db_item_list('Ingredient')
 # Free OCR API 配置
 OCR_PAYLOAD = {
     "isOverlayRequired": False,
-    "apikey": "K87144738488957",
+    "apikey": "YOUR_API_KEY_HERE",  
     "language": "cht",
     "isTable": True,  # 启用表格识别
 }
@@ -54,13 +54,16 @@ def correct_ocr_text(text):
         # 文字异体字统一（OCR易识别为日文/简体异体）
         '呑': '吞',
         '兽': '獸',
+        '冷静': '冷靜',
     }
     
     for old, new in corrections.items():
         text = text.replace(old, new)
     
-    # 去掉前导噪声（保留以 Lv. 开头的等级标记）
-    if not re.match(r'^\s*Lv\.?\d+', text, flags=re.IGNORECASE):
+    # 若前缀为 Lv+数字且后面紧接中文/字母内容，去掉 Lv 前缀以保留名称（如 "Lv8布撥" → "布撥"）
+    text = re.sub(r'^\s*Lv\.?\d+\s*([^\d\s].+)$', r'\1', text, flags=re.IGNORECASE)
+    # 去掉前导噪声（保留纯等级行，如 "Lv.50"）
+    if not re.match(r'^\s*Lv\.?\d+$', text, flags=re.IGNORECASE):
         # 先去掉以 p/P+数字 形式的噪声前缀
         text = re.sub(r'^[Pp]\d+', '', text)
         # 再去掉前导的 @ 或 纯数字
@@ -169,17 +172,52 @@ class TransformImage:
                                 if len(text_part) >= 2 and text_part in pokemon_name:
                                     info['pokemon'] = pokemon_name
                                     break
+                        # 仍未找到则进行近似匹配（容忍少量OCR错误，如異體字/錯別字）
+                        if 'pokemon' not in info:
+                            candidates = difflib.get_close_matches(text_part, pokemons_list, n=1, cutoff=0.5)
+                            if candidates:
+                                info['pokemon'] = candidates[0]
                 
                 # 主技能匹配
-                if text_part in main_skills_list and 'main_skill' not in info:
+                if 'main_skill' not in info and text_part in main_skills_list:
                     info['main_skill'] = text_part
                 
-                # 性格匹配
-                elif text_part in natures_list and 'nature' not in info:
-                    info['nature'] = text_part
+                # 性格匹配（增强：精确、包含、近似、上下文“性格”后取下一行）
+                if 'nature' not in info:
+                    if text_part in natures_list:
+                        info['nature'] = text_part
+                    else:
+                        # 双向包含匹配
+                        for nature_name in natures_list:
+                            if len(nature_name) >= 2 and nature_name in text_part:
+                                info['nature'] = nature_name
+                                break
+                        if 'nature' not in info:
+                            for nature_name in natures_list:
+                                if len(text_part) >= 2 and text_part in nature_name:
+                                    info['nature'] = nature_name
+                                    break
+                        # 上下文：当前文本为“性格”标签，则向后查找近邻行
+                        if 'nature' not in info and (text_part == '性格' or '性格' in text_part):
+                            for j in range(1, 4):
+                                if i + j < len(all_texts):
+                                    candidate = correct_ocr_text(all_texts[i + j])
+                                    if candidate in natures_list:
+                                        info['nature'] = candidate
+                                        break
+                                    else:
+                                        cand = difflib.get_close_matches(candidate, natures_list, n=1, cutoff=0.6)
+                                        if cand:
+                                            info['nature'] = cand[0]
+                                            break
+                        # 近似匹配兜底
+                        if 'nature' not in info:
+                            cand = difflib.get_close_matches(text_part, natures_list, n=1, cutoff=0.6)
+                            if cand:
+                                info['nature'] = cand[0]
                 
                 # 副技能匹配（只在位置7之后，保持OCR识别顺序）
-                elif i >= 7:
+                if 'nature' in info and i >= 7 or i >= 7:
                     matched_skill = self._match_sub_skill(text_part)
                     if matched_skill:
                         sub_skills_found.append((i, matched_skill))

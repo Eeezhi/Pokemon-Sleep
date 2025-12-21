@@ -31,7 +31,7 @@ ingredient_list = get_db_item_list('Ingredient')
 # Free OCR API 配置
 OCR_PAYLOAD = {
     "isOverlayRequired": False,
-    "apikey": "K87144738488957",
+    "apikey": "",
     "language": "cht",
     "isTable": True,  # 启用表格识别
 }

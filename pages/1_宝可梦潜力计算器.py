@@ -142,5 +142,5 @@ if uploaded_file is not None:
 else:
     st.header("截图示例")
     st.write("左上角宝可梦方框刚好「遮住第一个食材」，并且最底部刚好出现「性格」")
-    example_img = os.path.join(img_path, "test1.PNG")
+    example_img = os.path.join(img_path, "example.PNG")
     st.image(example_img ,width=400) #缩小显示

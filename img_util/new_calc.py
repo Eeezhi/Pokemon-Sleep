@@ -58,6 +58,8 @@ def fruit_type(sub_skills, nature_up, nature_down):
             else:
                 score = j.nature_help_none
                 result = j.result2
+        if score is None:
+            result = "宝可梦不可用"
     return score, result
         
 def skill_type(sub_skills, nature_up, nature_down):

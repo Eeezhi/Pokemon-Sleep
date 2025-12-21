@@ -55,6 +55,7 @@ def correct_ocr_text(text):
         '呑': '吞',
         '兽': '獸',
         '冷静': '冷靜',
+        '冫令青爭': '冷靜',
     }
     
     for old, new in corrections.items():
@@ -217,7 +218,7 @@ class TransformImage:
                                 info['nature'] = cand[0]
                 
                 # 副技能匹配（只在位置7之后，保持OCR识别顺序）
-                if 'nature' in info and i >= 7 or i >= 7:
+                if 'nature' in info and i >= 9 or i >= 9:
                     matched_skill = self._match_sub_skill(text_part)
                     if matched_skill:
                         sub_skills_found.append((i, matched_skill))

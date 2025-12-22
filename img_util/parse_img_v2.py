@@ -138,6 +138,7 @@ class TransformImage:
         all_texts = result if isinstance(result, list) else [result]
         info = {}
         sub_skills_found = []  # (原始位置, 技能名) - 保持OCR识别顺序
+        main_skill_index = -1  # 记录主技能匹配的行号
         
         # OCR 识别结果
         with st.expander("📋 OCR 识别文本"):
@@ -182,6 +183,7 @@ class TransformImage:
                 # 主技能匹配
                 if 'main_skill' not in info and text_part in main_skills_list:
                     info['main_skill'] = text_part
+                    main_skill_index = i  # 记录主技能匹配的行号
                 
                 # 性格匹配（增强：精确、包含、近似、上下文“性格”后取下一行）
                 if 'nature' not in info:
@@ -217,8 +219,8 @@ class TransformImage:
                             if cand:
                                 info['nature'] = cand[0]
                 
-                # 副技能匹配（只在位置7之后，保持OCR识别顺序）
-                if 'nature' in info and i >= 9 or i >= 9:
+                # 只在主技能匹配完毕之后才开始匹配副技能，且副技能行数一定要大于主技能行数
+                if 'main_skill' in info and i > main_skill_index:
                     matched_skill = self._match_sub_skill(text_part)
                     if matched_skill:
                         sub_skills_found.append((i, matched_skill))

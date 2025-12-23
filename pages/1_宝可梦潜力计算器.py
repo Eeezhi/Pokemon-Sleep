@@ -121,8 +121,10 @@ if uploaded_file is not None:
                         st.markdown(f"### 评价结果：**{result}**")
                     else:
                         st.markdown(f"### 评价结果：**{result}**")
-            
+            st.markdown(f"## 评价分为：大毕业/毕业/和解/宝可梦不可用")
             st.divider()
+
+
             
             # # 顯示擷取結果到文字輸入框
             # st.header("OCR识别文本")

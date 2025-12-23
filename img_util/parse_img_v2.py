@@ -29,9 +29,8 @@ sub_skills_list = get_db_item_list('SubSkill')
 natures_list = get_db_item_list('Nature')
 ingredient_list = get_db_item_list('Ingredient')
 # Free OCR API 配置
-OCR_PAYLOAD = {
+OCR_PAYLOAD_BASE = {
     "isOverlayRequired": False,
-    "apikey": "your_free_api_key_here",  # 替换为你的 Free OCR API Key
     "language": "cht",
     "isTable": True,  # 启用表格识别
 }
@@ -87,11 +86,26 @@ class TransformImage:
     def extract_text_from_img(self):
         """从图片中提取文字，使用 Free OCR API"""
         try:
+            # 优先从 Streamlit secrets 获取 OCR key，不落盘；兼容 [ocr].apikey 格式
+            ocr_api_key = None
+            try:
+                if "ocr_space_api_key" in st.secrets:
+                    ocr_api_key = st.secrets["ocr_space_api_key"]
+                elif "ocr" in st.secrets and "apikey" in st.secrets["ocr"]:
+                    ocr_api_key = st.secrets["ocr"]["apikey"]
+            except Exception:
+                pass
+            if not ocr_api_key:
+                ocr_api_key = os.getenv("OCR_SPACE_API_KEY")
+            if not ocr_api_key:
+                st.error("❌ 未配置 OCR API Key，请在 .streamlit/secrets.toml 中添加 ocr_space_api_key 或 [ocr].apikey，或设置环境变量 OCR_SPACE_API_KEY")
+                return []
+
             files = {"file": ("image.jpg", self.img, "image/jpeg")}
             resp = requests.post(
                 OCR_ENDPOINT,
                 files=files,
-                data=OCR_PAYLOAD,
+                data={**OCR_PAYLOAD_BASE, "apikey": ocr_api_key},
                 timeout=30
             )
             resp.raise_for_status()
@@ -137,7 +151,9 @@ class TransformImage:
         
         all_texts = result if isinstance(result, list) else [result]
         info = {}
+        pokemon_match_quality = 0  # 0: none, 1: fuzzy, 1.5: text in name, 2: name in text, 3: exact
         sub_skills_found = []  # (原始位置, 技能名) - 保持OCR识别顺序
+        main_skill_index = -1  # 记录主技能匹配的行号
         
         # OCR 识别结果
         with st.expander("📋 OCR 识别文本"):
@@ -157,31 +173,32 @@ class TransformImage:
                 texts_to_check = [t.strip() for t in text_corrected.split('\t') if t.strip()]
             
             for text_part in texts_to_check:
-                # 宝可梦匹配（优先精确匹配，再尝试包含匹配）
-                if 'pokemon' not in info:
-                    if text_part in pokemons_list:
-                        info['pokemon'] = text_part
-                    else:
-                        # 尝试模糊匹配：宝可梦名称在文本中
-                        for pokemon_name in pokemons_list:
-                            if len(pokemon_name) >= 2 and pokemon_name in text_part:
-                                info['pokemon'] = pokemon_name
-                                break
-                        # 如果还没找到，反过来尝试：文本在某个宝可梦名称中
-                        if 'pokemon' not in info:
-                            for pokemon_name in pokemons_list:
-                                if len(text_part) >= 2 and text_part in pokemon_name:
-                                    info['pokemon'] = pokemon_name
-                                    break
-                        # 仍未找到则进行近似匹配（容忍少量OCR错误，如異體字/錯別字）
-                        if 'pokemon' not in info:
-                            candidates = difflib.get_close_matches(text_part, pokemons_list, n=1, cutoff=0.5)
-                            if candidates:
-                                info['pokemon'] = candidates[0]
+                # 宝可梦匹配：按匹配质量更新，避免先被模糊匹配锁定
+                if text_part in pokemons_list and pokemon_match_quality < 3:
+                    info['pokemon'] = text_part
+                    pokemon_match_quality = 3
+                if pokemon_match_quality < 2:
+                    for pokemon_name in pokemons_list:
+                        if len(pokemon_name) >= 2 and pokemon_name in text_part:
+                            info['pokemon'] = pokemon_name
+                            pokemon_match_quality = 2
+                            break
+                if pokemon_match_quality < 1.5:
+                    for pokemon_name in pokemons_list:
+                        if len(text_part) >= 2 and text_part in pokemon_name:
+                            info['pokemon'] = pokemon_name
+                            pokemon_match_quality = 1.5
+                            break
+                if len(text_part) >= 2 and pokemon_match_quality < 1:
+                    candidates = difflib.get_close_matches(text_part, pokemons_list, n=1, cutoff=0.6)
+                    if candidates:
+                        info['pokemon'] = candidates[0]
+                        pokemon_match_quality = 1
                 
                 # 主技能匹配
                 if 'main_skill' not in info and text_part in main_skills_list:
                     info['main_skill'] = text_part
+                    main_skill_index = i  # 记录主技能匹配的行号
                 
                 # 性格匹配（增强：精确、包含、近似、上下文“性格”后取下一行）
                 if 'nature' not in info:
@@ -217,8 +234,8 @@ class TransformImage:
                             if cand:
                                 info['nature'] = cand[0]
                 
-                # 副技能匹配（只在位置7之后，保持OCR识别顺序）
-                if 'nature' in info and i >= 9 or i >= 9:
+                # 只在主技能匹配完毕之后才开始匹配副技能，且副技能行数一定要大于主技能行数
+                if 'main_skill' in info and i > main_skill_index:
                     matched_skill = self._match_sub_skill(text_part)
                     if matched_skill:
                         sub_skills_found.append((i, matched_skill))

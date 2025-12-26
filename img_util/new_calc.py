@@ -38,7 +38,7 @@ def fruit_type(sub_skills, nature_up, nature_down):
     result = None
         
     # 读取效率数据
-    efficient_data = pd.read_csv(os.path.join(EFFICIENT_DIR, 'Efficient_help_fruit.csv'))
+    efficient_data = pd.read_csv(os.path.join(EFFICIENT_DIR, 'Efficient_help_fruit.csv'), encoding='utf-8-sig')
     # 根据fruit_s和help_speed筛选数据
     filtered_data = efficient_data[
             (efficient_data['help_bonus'] == int(help_bonus)) &
@@ -76,7 +76,7 @@ def skill_type(sub_skills, nature_up, nature_down):
     else:
         nature_skill_prob = 1
     # 读取效率数据
-    efficient_data = pd.read_csv(os.path.join(EFFICIENT_DIR, 'Efficient_help_skill.csv'))
+    efficient_data = pd.read_csv(os.path.join(EFFICIENT_DIR, 'Efficient_help_skill.csv'), encoding='utf-8-sig')
     # 根据prob, help_speed和nature_skill_prob筛选数据
     filtered_data = efficient_data[
             (efficient_data['help_bonus'] == int(help_bonus)) &
@@ -122,7 +122,7 @@ def ingredient_type(sub_skills, nature_up, nature_down):
     else:
         nature_ingredient_prob = 1
     # 读取效率数据
-    efficient_data = pd.read_csv(os.path.join(EFFICIENT_DIR, 'Efficient_help_ingredient.csv'))
+    efficient_data = pd.read_csv(os.path.join(EFFICIENT_DIR, 'Efficient_help_ingredient.csv'), encoding='utf-8-sig')
     # 根据prob, help_speed和nature_ingredient_prob筛选数据
     filtered_data = efficient_data[
             (efficient_data['help_bonus'] == int(help_bonus)) &

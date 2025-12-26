@@ -19,7 +19,7 @@ st.title('Pokemon Sleep 食谱')
 st.caption('利用现在有的食材，查询可以料理的食谱')
 
 RECIPE_TRANSFORMED = os.path.join(database_path, 'transformed/recipe_transformed.csv')
-df = pd.read_csv(RECIPE_TRANSFORMED, index_col=0)
+df = pd.read_csv(RECIPE_TRANSFORMED, index_col=0, encoding='utf-8-sig')
 ingredient_unique_list = get_ingredient_unique_list(df)
 
 ingredient_col, match_mode_col = st.columns([2, 1])

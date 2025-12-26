@@ -39,11 +39,37 @@ if uploaded_file is not None:
 
         # Pokemon
         #pokemon_info = get_pokemon_info_from_bq(info["pokemon"])
-        pokemon_info = get_pokemon_info_local(info["pokemon"])
+        pokemon_name = info["pokemon"]
+        
+        pokemon_info = get_pokemon_info_local(pokemon_name)
         
         # 检查是否找到了宝可梦信息
         if pokemon_info is None:
-            st.error(f"❌ 找不到宝可梦 '{info['pokemon']}' 的信息，请检查数据库")
+            # 调试：列出数据库中的所有宝可梦以进行比较
+            import pandas as pd
+            import os
+            from filepath import database_path
+            
+            db_path = os.path.dirname(os.path.dirname(database_path))
+            pokemon_csv = os.path.join(db_path, "data", "Pokemon.csv")
+            try:
+                df_all = pd.read_csv(pokemon_csv, encoding='utf-8-sig')
+                all_pokemons = df_all["name"].dropna().unique().tolist()
+                st.warning(f"⚠️ 数据库中共有 {len(all_pokemons)} 只宝可梦")
+                
+                # 检查名称是否存在
+                if pokemon_name in all_pokemons:
+                    st.error(f"❌ 宝可梦 '{pokemon_name}' 存在于数据库中，但无法读取完整信息（可能是合并字段缺失）")
+                else:
+                    # 显示相似的宝可梦
+                    import difflib
+                    similar = difflib.get_close_matches(pokemon_name, all_pokemons, n=5, cutoff=0.5)
+                    if similar:
+                        st.error(f"❌ 找不到宝可梦 '{pokemon_name}' 的信息，您是否想查找: {', '.join(similar)}")
+                    else:
+                        st.error(f"❌ 找不到宝可梦 '{pokemon_name}' 的信息，请检查数据库")
+            except Exception as e:
+                st.error(f"❌ 找不到宝可梦 '{pokemon_name}' 的信息，请检查数据库 (错误: {str(e)})")
         else:
             # Sub Skills
             sub_skills_list = get_item_list_from_bq("SubSkill")
@@ -62,15 +88,24 @@ if uploaded_file is not None:
             # Ingredient 2 and 3
             ingredient_list = get_item_list_from_bq("Ingredient")
             ingredient_list.insert(0, "---")
+            
+            # 安全获取默认食材索引（如果食材不在列表中，则使用 0）
+            default_ingredient = pokemon_info.get('ingredient', '---')
+            try:
+                default_index = ingredient_list.index(default_ingredient)
+            except ValueError:
+                st.warning(f"⚠️ 食材 '{default_ingredient}' 不在数据库中，请手动选择")
+                default_index = 0
+            
             ingredient_2 = st.selectbox(
-                ":orange[食材2]", ingredient_list, index=ingredient_list.index(pokemon_info['ingredient'])
+                ":orange[食材2]", ingredient_list, index=default_index
             )
             ingredient_2_num = st.slider(
                 ":orange[食材2數量]", value=2, min_value=1, max_value=10, step=1
             )
 
             ingredient_3 = st.selectbox(
-                ":orange[食材3]", ingredient_list, index=ingredient_list.index(pokemon_info['ingredient'])
+                ":orange[食材3]", ingredient_list, index=default_index
             )
             ingredient_3_num = st.slider(
                 ":orange[食材3數量]", value=4, min_value=1, max_value=10, step=1

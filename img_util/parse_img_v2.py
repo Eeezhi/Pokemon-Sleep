@@ -17,7 +17,7 @@ def get_db_item_list(collection_name: str):
     file_path = os.path.join(raw_DATA_DIR, f"{collection_name}.csv")
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"找不到文件: {file_path}")
-    df = pd.read_csv(file_path)
+    df = pd.read_csv(file_path, encoding='utf-8-sig')
     if "name" in df.columns:
         return df["name"].dropna().unique().tolist()
     else:
@@ -155,6 +155,9 @@ class TransformImage:
         sub_skills_found = []  # (原始位置, 技能名) - 保持OCR识别顺序
         main_skill_index = -1  # 记录主技能匹配的行号
         
+        # 实时加载宝可梦列表，避免缓存问题
+        current_pokemons_list = get_db_item_list('Pokemon')
+        
         # OCR 识别结果
         with st.expander("📋 OCR 识别文本"):
             for i, text in enumerate(all_texts):
@@ -174,23 +177,23 @@ class TransformImage:
             
             for text_part in texts_to_check:
                 # 宝可梦匹配：按匹配质量更新，避免先被模糊匹配锁定
-                if text_part in pokemons_list and pokemon_match_quality < 3:
+                if text_part in current_pokemons_list and pokemon_match_quality < 3:
                     info['pokemon'] = text_part
                     pokemon_match_quality = 3
                 if pokemon_match_quality < 2:
-                    for pokemon_name in pokemons_list:
+                    for pokemon_name in current_pokemons_list:
                         if len(pokemon_name) >= 2 and pokemon_name in text_part:
                             info['pokemon'] = pokemon_name
                             pokemon_match_quality = 2
                             break
                 if pokemon_match_quality < 1.5:
-                    for pokemon_name in pokemons_list:
+                    for pokemon_name in current_pokemons_list:
                         if len(text_part) >= 2 and text_part in pokemon_name:
                             info['pokemon'] = pokemon_name
                             pokemon_match_quality = 1.5
                             break
                 if len(text_part) >= 2 and pokemon_match_quality < 1:
-                    candidates = difflib.get_close_matches(text_part, pokemons_list, n=1, cutoff=0.6)
+                    candidates = difflib.get_close_matches(text_part, current_pokemons_list, n=1, cutoff=0.6)
                     if candidates:
                         info['pokemon'] = candidates[0]
                         pokemon_match_quality = 1

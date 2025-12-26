@@ -180,13 +180,13 @@ BASE_DIR = os.path.dirname(UPPER_DIR)
 DATA_DIR = os.path.join(BASE_DIR, "data")
 
 
-df_ingredient = pd.read_csv(os.path.join(DATA_DIR, "Ingredient.csv"))
-df_fruit = pd.read_csv(os.path.join(DATA_DIR, "Fruit.csv"))
-df_skill = pd.read_csv(os.path.join(DATA_DIR, "MainSkill.csv"))
+df_ingredient = pd.read_csv(os.path.join(DATA_DIR, "Ingredient.csv"), encoding='utf-8-sig')
+df_fruit = pd.read_csv(os.path.join(DATA_DIR, "Fruit.csv"), encoding='utf-8-sig')
+df_skill = pd.read_csv(os.path.join(DATA_DIR, "MainSkill.csv"), encoding='utf-8-sig')
 
 @st.cache_data
 def get_pokemon_info_local(pokemon: str) -> dict | None:
-    df_pokemon = pd.read_csv(os.path.join(DATA_DIR, "Pokemon.csv"))
+    df_pokemon = pd.read_csv(os.path.join(DATA_DIR, "Pokemon.csv"), encoding='utf-8-sig')
     # 兼容不同欄位命名：去除列名空白並做別名映射
     df_pokemon.columns = [str(c).strip() for c in df_pokemon.columns]
     col_alias_map = {}
@@ -210,11 +210,12 @@ def get_pokemon_info_local(pokemon: str) -> dict | None:
         st.warning(f"Pokemon.csv 缺少列: {', '.join(missing)}，請檢查資料格式")
         return None
 
+    # 使用左连接（left join）避免因为缺失字段而丢失宝可梦记录
     df = (
         df_pokemon
-        .merge(df_ingredient, left_on="ingredient", right_on="name", suffixes=("", "_ingredient"))
-        .merge(df_fruit, left_on="fruit", right_on="name", suffixes=("", "_fruit"))
-        .merge(df_skill, left_on="main_skill", right_on="name", suffixes=("", "_skill"))
+        .merge(df_ingredient, left_on="ingredient", right_on="name", suffixes=("", "_ingredient"), how='left')
+        .merge(df_fruit, left_on="fruit", right_on="name", suffixes=("", "_fruit"), how='left')
+        .merge(df_skill, left_on="main_skill", right_on="name", suffixes=("", "_skill"), how='left')
     )
 
     # 使用 "name" 列进行查询（找不到时尝试模糊匹配別名/近似名稱）
@@ -226,7 +227,16 @@ def get_pokemon_info_local(pokemon: str) -> dict | None:
         if candidates:
             subset = df[df["name"] == candidates[0]]
         else:
-            return None
+            # 如果merge后的表中找不到，尝试从原始表查询
+            name_list = df_pokemon["name"].astype(str).tolist()
+            candidates = difflib.get_close_matches(pokemon, name_list, n=1, cutoff=0.5)
+            if candidates:
+                subset = df_pokemon[df_pokemon["name"] == candidates[0]]
+            else:
+                return None
+
+    if subset.empty:
+        return None
 
     row = subset.iloc[0].to_dict()
 
@@ -295,7 +305,7 @@ def get_item_list_from_bq(table_name: str) -> list[str]:
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"找不到文件: {file_path}")
 
-    df = pd.read_csv(file_path)
+    df = pd.read_csv(file_path, encoding='utf-8-sig')
 
     if "name" not in df.columns:
         raise ValueError(f"{table_name}.csv 缺少 'name' 列")
@@ -316,7 +326,7 @@ def get_nature_dict_from_bq(nature_name: str) -> dict:
         st.error(f"缺失文件: {csv_path}. 請將 Nature.csv 放入 data/ 目錄。")
         raise FileNotFoundError(f"Nature.csv not found in {DATA_DIR}")
 
-    df = pd.read_csv(csv_path)
+    df = pd.read_csv(csv_path, encoding='utf-8-sig')
     if "name" not in df.columns:
         st.error(f"Nature.csv 必須包含 'name' 欄位")
         raise ValueError("Nature.csv missing 'name' column")

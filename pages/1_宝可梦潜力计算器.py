@@ -151,12 +151,20 @@ if uploaded_file is not None:
                         })
 
                     score, result = calculator(**info_dict)
+                    # 根据result结果设置颜色
+                    result_colors = {
+                        "大毕业": "orange",
+                        "毕业": "purple",
+                        "和解": "blue",
+                        "宝可梦不可用": "gray"
+                    }
                     if pd.notna(score):
-                        st.markdown(f"### 宝可梦效率：**{score}**")
-                        st.markdown(f"### 评价结果：**{result}**")
+                        st.markdown(f"### 宝可梦效率：**:{score}**")
+                        result_color = result_colors.get(result, "gray")
+                        st.markdown(f"### 评价结果：**:{result_color}[{result}]**")
                     else:
                         st.markdown(f"### 评价结果：**{result}**")
-            st.markdown(f"## 评价分为：大毕业/毕业/和解/宝可梦不可用")
+            #st.markdown(f"## 评价分为：大毕业/毕业/和解/宝可梦不可用")
             st.divider()
 
 
@@ -180,4 +188,4 @@ else:
     st.header("截图示例")
     st.write("左上角宝可梦方框刚好「遮住第一个食材」，并且最底部刚好出现「性格」")
     example_img = os.path.join(img_path, "example.PNG")
-    st.image(example_img ,width=400) #缩小显示
+    st.image(example_img ,width=400) #缩小显�

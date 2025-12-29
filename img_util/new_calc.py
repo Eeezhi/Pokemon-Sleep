@@ -89,21 +89,21 @@ def skill_type(sub_skills, nature_up, nature_down):
     score = None
     result = None
     
-    if filtered_data.empty:
+    # if filtered_data.empty:
+    #     result = "宝可梦不可用"
+
+    for j in filtered_data.itertuples():
+        if nature_up == '幫忙速度':
+            score = j.nature_help_up
+            result = j.result1
+        elif nature_down == '幫忙速度':
+            score = j.nature_help_down
+            result = j.result3
+        else:
+            score = j.nature_help_none
+            result = j.result2
+    if pd.isna(score):
         result = "宝可梦不可用"
-    else:
-        for j in filtered_data.itertuples():
-            if nature_up == '幫忙速度':
-                score = j.nature_help_up
-                result = j.result1
-            elif nature_down == '幫忙速度':
-                score = j.nature_help_down
-                result = j.result3
-            else:
-                score = j.nature_help_none
-                result = j.result2
-        if pd.isna(score):
-            result = "宝可梦不可用"
     
     return score, result
 
